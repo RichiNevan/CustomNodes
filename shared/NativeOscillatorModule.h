@@ -16,7 +16,8 @@ public:
 
 private:
   jsi::Function createInstaller(jsi::Runtime &runtime);
-  // you can add more installer for different processors here
+  jsi::Function createOscillatorInstaller(jsi::Runtime &runtime);
+  jsi::Function createMartigliInstaller(jsi::Runtime &runtime);
 };
 
 } // namespace facebook::react

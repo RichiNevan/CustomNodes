@@ -2,6 +2,38 @@ Very good. Now: you need to understand what i am trying to achieve. The oscillat
 The sound produced will be that of a sine wave (like a zoomed in sinewave, somehow), whose movement up and down will serve as a guide for the user's breath. The original logic for this was written with tone.js, and here it is:
 
 ============BEGINNING TONE.JS MARTIGLI LOGIC============================
+export const mkOsc = (
+  freq,
+  vol,
+  pan,
+  type,
+  noConnect = false,
+  nostart = true,
+  phase = 0
+) => {
+  const panner = new t.Panner(d(pan, 1)); // Default pan is 0 (center), range -1 to +1.
+  if (!noConnect) panner.toDestination();
+
+  // TODO: Solve the phase
+  //console.log({ freq, vol, pan, type, phase }, "bef");
+  const synth = new t.Oscillator({
+    frequency: d(freq, 200),
+    type: d(type, "sine"),
+    //phase: (phase / Math.PI) * 180, // Convert radians to degrees since Tone.js uses degrees for phase.
+  }).connect(panner);
+
+  synth.sync();
+  synth.phase = phase; // TODO: assert phase is working. Find way to sample it other than meter.
+  synth.volume.value = d(vol, -200);
+
+  // Expose the panner for external use.
+  synth.panner = panner;
+
+  if (!nostart) synth.start(0);
+
+  return synth;
+};
+
 export const setPanner = (s, synthL, synthR, mod) => {
   if (s.panOsc === 0) {
     return { start: () => {}, stop: () => {}, dispose: () => {} };
