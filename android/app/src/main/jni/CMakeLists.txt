@@ -8,9 +8,8 @@ set(AUDIO_API_DIR ${ROOT}/node_modules/react-native-audio-api)
 include(${REACT_ANDROID_DIR}/cmake-utils/ReactNative-application.cmake)
 
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
-  ${ROOT}/shared/NativeAudioProcessingModule.cpp
-  ${ROOT}/shared/MyProcessorNode.cpp
-  ${ROOT}/shared/MyProcessorNodeHostObject.cpp
+  ${ROOT}/shared/NativeOscillatorModule.cpp
+  ${ROOT}/shared/MyOscillatorNode.cpp
 )
 
 target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC

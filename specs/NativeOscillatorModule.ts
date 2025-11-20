@@ -4,4 +4,4 @@ export interface Spec extends TurboModule {
     injectCustomProcessorInstaller(): void;
 }
 
-export default TurboModuleRegistry.getEnforcing<Spec>("NativeAudioProcessingModule");
+export default TurboModuleRegistry.getEnforcing<Spec>("NativeOscillatorModule");

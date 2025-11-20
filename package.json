@@ -19,7 +19,7 @@
     },
     "ios": {
       "modulesProvider": {
-        "NativeAudioProcessingModule": "NativeAudioProcessingModuleProvider"
+        "NativeOscillatorModule": "NativeOscillatorModuleProvider"
       }
     }
   },

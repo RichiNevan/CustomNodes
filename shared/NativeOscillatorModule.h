@@ -8,14 +8,15 @@
 
 namespace facebook::react {
 
-class NativeAudioProcessingModule
-    : public NativeAudioProcessingModuleCxxSpec<NativeAudioProcessingModule> {
+class NativeOscillatorModule
+    : public NativeOscillatorModuleCxxSpec<NativeOscillatorModule> {
 public:
-  explicit NativeAudioProcessingModule(std::shared_ptr<CallInvoker> jsInvoker);
+  NativeOscillatorModule(std::shared_ptr<CallInvoker> jsInvoker);
   void injectCustomProcessorInstaller(jsi::Runtime &runtime);
 
 private:
   jsi::Function createInstaller(jsi::Runtime &runtime);
+  // you can add more installer for different processors here
 };
 
 } // namespace facebook::react

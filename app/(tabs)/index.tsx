@@ -1,82 +1,148 @@
-import React, { useCallback, useEffect, useState, FC, useRef } from 'react';
-import { ActivityIndicator } from 'react-native';
-import { Container, Button } from '../components';
-import AudioPlayer from './AudioPlayer';
-import Turbo from '../../specs/NativeAudioProcessingModule';
-import Slider from '@react-native-community/slider';
-
-const URL =
-  'https://software-mansion.github.io/react-native-audio-api/audio/music/example-music-01.mp3';
+import React, { useCallback, useEffect, useState, FC, useRef } from "react";
+import { ActivityIndicator, StyleSheet, View, Text } from "react-native";
+import Slider from "@react-native-community/slider";
+import { Container, Button } from "../components";
+import NativeOscillatorModule from "../../specs/NativeOscillatorModule";
+import { MyOscillatorNode } from "./types";
+import { AudioContext } from "react-native-audio-api";
 
 const AudioFile: FC = () => {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [customProcessor, setCustomProcessor] = useState(false);
-  const [gain, setGain] = useState(0.1);
+  const [isReady, setIsReady] = useState(false);
+  const [isOscPlaying, setIsOscPlaying] = useState(false);
+  const [frequency, setFrequency] = useState(440);
+  const [volume, setVolume] = useState(0.5);
 
-  const togglePlayPause = async () => {
-    if (isPlaying) {
-      await AudioPlayer.pause();
-    } else {
-      await AudioPlayer.play(customProcessor);
-    }
+  // Use refs to hold the audio context and node instances
+  // This prevents them from being re-created on every render
+  const audioContext = useRef<AudioContext | null>(null);
+  const oscillatorNode = useRef<MyOscillatorNode | null>(null);
 
-    setIsPlaying((prev) => !prev);
-  };
-
+  // Effect to initialize the audio context and inject the custom processor
   useEffect(() => {
-    AudioPlayer.modifyGain(gain);
-  }, [gain]);
+    if (audioContext.current) return;
 
-  const fetchAudioBuffer = useCallback(async () => {
-    setIsLoading(true);
+    audioContext.current = new AudioContext();
 
-    await AudioPlayer.loadBuffer(URL);
-    if (Turbo) {
-      if (global.createCustomProcessorNode == null) {
-        Turbo.injectCustomProcessorInstaller();
-      }
+    if (NativeOscillatorModule) {
+      console.log("NativeOscillatorModule is available");
+      console.log("Injecting custom processor installer");
+      NativeOscillatorModule.injectCustomProcessorInstaller();
     } else {
-      console.log('Turbo module is not available');
+      console.log("NativeOscillatorModule is not available");
     }
-
-    setIsLoading(false);
+    setIsReady(true);
   }, []);
 
-  const toggleCustomProcessor = () => { 
-    setCustomProcessor((prev) => !prev);
+  const toggleOscillator = async () => {
+    console.log("Toggling oscillator");
+    if (!audioContext.current) return;
+    console.log(`Toggling oscillator. Currently playing: ${isOscPlaying}`);
+
+    if (isOscPlaying) {
+      // If playing, disconnect and stop
+      if (oscillatorNode.current) {
+        oscillatorNode.current.disconnect();
+        oscillatorNode.current = null;
+      }
+      await audioContext.current.suspend();
+      setIsOscPlaying(false);
+    } else {
+      // If stopped, resume context and start playing
+      await audioContext.current.resume();
+
+      // Create the custom C++ node
+      const node = new MyOscillatorNode(
+        audioContext.current,
+        global.createMyOscillatorNode(audioContext.current.context)
+      );
+
+      // Set its frequency and volume, then connect it to the output
+      node.frequency = frequency;
+      node.volume = volume;
+      node.connect(audioContext.current.destination);
+
+      oscillatorNode.current = node;
+      setIsOscPlaying(true);
+    }
   };
-  
-  useEffect(() => {
-    fetchAudioBuffer();
-  }, [fetchAudioBuffer]);
+
+  const handleFrequencyChange = (value: number) => {
+    setFrequency(value);
+    if (oscillatorNode.current) {
+      oscillatorNode.current.frequency = value;
+    }
+  };
+
+  const handleVolumeChange = (value: number) => {
+    setVolume(value);
+    if (oscillatorNode.current) {
+      oscillatorNode.current.volume = value;
+    }
+  };
 
   return (
     <Container centered>
-      {isLoading && <ActivityIndicator color="#FFFFFF" />}
+      {!isReady && <ActivityIndicator color="#FFFFFF" />}
       <Button
-        title={isPlaying ? 'Stop' : 'Play'}
-        onPress={togglePlayPause}
-        disabled={isLoading}
+        title={isOscPlaying ? "Stop Oscillator" : "Play Oscillator"}
+        onPress={toggleOscillator}
+        disabled={!isReady}
       />
-      <Slider
-        style={{ width: 300, height: 40 }}
-        minimumValue={0}
-        maximumValue={1}
-        step={0.1}
-        value={gain}
-        onValueChange={setGain}
-        minimumTrackTintColor="#1EB1FC"
-        maximumTrackTintColor="#8E8E93"
-        thumbTintColor="#1EB1FC"
-      />
-      <Button
-        title={customProcessor ? "Remove custom processor" : "Apply custom processor"}
-        onPress={toggleCustomProcessor}
-        disabled={isLoading} />
 
+      <View style={styles.controlsContainer}>
+        <View style={styles.sliderContainer}>
+          <Text style={styles.label}>Frequency: {frequency.toFixed(0)} Hz</Text>
+          <Slider
+            style={styles.slider}
+            minimumValue={20}
+            maximumValue={2000}
+            value={frequency}
+            onValueChange={handleFrequencyChange}
+            minimumTrackTintColor="#1EB1FC"
+            maximumTrackTintColor="#8B8B8B"
+            thumbTintColor="#1EB1FC"
+            disabled={!isReady}
+          />
+        </View>
+
+        <View style={styles.sliderContainer}>
+          <Text style={styles.label}>Volume: {(volume * 100).toFixed(0)}%</Text>
+          <Slider
+            style={styles.slider}
+            minimumValue={0}
+            maximumValue={1}
+            value={volume}
+            onValueChange={handleVolumeChange}
+            minimumTrackTintColor="#1EB1FC"
+            maximumTrackTintColor="#8B8B8B"
+            thumbTintColor="#1EB1FC"
+            disabled={!isReady}
+          />
+        </View>
+      </View>
     </Container>
   );
 };
+
+const styles = StyleSheet.create({
+  controlsContainer: {
+    width: "100%",
+    paddingHorizontal: 20,
+    marginTop: 30,
+  },
+  sliderContainer: {
+    marginBottom: 25,
+  },
+  label: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 10,
+  },
+  slider: {
+    width: "100%",
+    height: 40,
+  },
+});
 
 export default AudioFile;

@@ -33,7 +33,7 @@
 #include <fbjni/fbjni.h>
 #include <react/renderer/componentregistry/ComponentDescriptorProviderRegistry.h>
 #include <rncore.h>
-#include <NativeAudioProcessingModule.h>
+#include <NativeOscillatorModule.h>
 
 #ifdef REACT_NATIVE_APP_CODEGEN_HEADER
 #include REACT_NATIVE_APP_CODEGEN_HEADER
@@ -68,8 +68,8 @@ std::shared_ptr<TurboModule> cxxModuleProvider(
   // either your application or from external libraries. The approach to follow
   // is similar to the following (for a module called `NativeCxxModuleExample`):
   //
-  if (name == NativeAudioProcessingModule::kModuleName) {
-    return std::make_shared<NativeAudioProcessingModule>(jsInvoker);
+  if (name == NativeOscillatorModule::kModuleName) {
+    return std::make_shared<NativeOscillatorModule>(jsInvoker);
   }
 
   // And we fallback to the CXX module providers autolinked

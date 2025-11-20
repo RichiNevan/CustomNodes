@@ -1,0 +1,222 @@
+Very good. Now: you need to understand what i am trying to achieve. The oscillator was just a first example, to understand how to get some sound out of this custom node. The node i need will actually be made of two oscillators, one of which, an lfo. 
+The sound produced will be that of a sine wave (like a zoomed in sinewave, somehow), whose movement up and down will serve as a guide for the user's breath. The original logic for this was written with tone.js, and here it is:
+
+============BEGINNING TONE.JS MARTIGLI LOGIC============================
+export const setPanner = (s, synthL, synthR, mod) => {
+  if (s.panOsc === 0) {
+    return { start: () => {}, stop: () => {}, dispose: () => {} };
+  } else if (s.panOsc === 1) {
+    // linear transition and hold
+    const mul2 = new t.Multiply(2);
+    const addm1 = new t.Add(-1);
+    const negate = new t.Negate();
+    const env = new t.Envelope({
+      attack: s.panOscTrans,
+      decay: 0.01,
+      sustain: 1,
+      release: s.panOscTrans,
+      attackCurve: "linear",
+      releaseCurve: "linear",
+    }).chain(mul2, addm1.connect(synthL.panner.pan), negate, synthR.panner.pan);
+    // todo: check if 2x period is the right way to go and if the settings are 100% ok.
+    const loop = new t.Loop((time) => {
+      env.triggerAttackRelease(s.panOscPeriod, time);
+    }, s.panOscPeriod * 2);
+    return {
+      start: (tt) => loop.start(tt), // has to have transport started
+      stop: (tt) => loop.stop(tt),
+      dispose: () => {
+        env.dispose();
+        mul2.dispose();
+        addm1.dispose();
+        negate.dispose();
+      },
+    };
+  } else if ([2, 3].includes(s.panOsc)) {
+    // sine
+    // todo: implement arbitrary Martigli to sync the pan
+    let panOsc;
+    let ret;
+    if (s.panOsc === 3) {
+      // in sync with Martigli oscillation:
+      panOsc = mod;
+      ret = { start: () => {}, stop: () => {}, dispose: () => {} };
+    } else {
+      // independent sine oscillator is the panner:
+      panOsc = mkOsc(1 / s.panOscPeriod, 0, 0, "sine", true, true);
+      ret = {
+        start: (tt) => panOsc.start(tt),
+        stop: (tt) => panOsc.stop(tt + 1),
+        dispose: () => panOsc.dispose(),
+      };
+    }
+    const neg = new t.Negate();
+    const mul1 = new t.Multiply(1);
+    panOsc.fan(neg, mul1);
+    mul1.connect(synthL.panner.pan);
+    neg.connect(synthR.panner.pan);
+    return ret;
+  }
+};
+
+function createPausableRamp(param, startTime, targetValue, totalDuration) {
+  let isRunning = true;
+  let elapsedTime = 0;
+  let pausedAt = null;
+
+  const now = t.now();
+  const initialValue = param.value;
+
+  // Initial ramp
+  param.cancelScheduledValues(now);
+  param.setValueAtTime(initialValue, now);
+  param.linearRampToValueAtTime(targetValue, now + totalDuration);
+
+  function pause() {
+    if (!isRunning) return;
+    isRunning = false;
+    pausedAt = t.now();
+    elapsedTime += pausedAt - startTime;
+
+    // Save current value & stop future ramps
+    const current = param.value;
+    param.cancelScheduledValues(pausedAt);
+    param.setValueAtTime(current, pausedAt); // freeze at current value
+  }
+
+  function resume() {
+    if (isRunning) return;
+    const now = t.now();
+    isRunning = true;
+    const remainingTime = totalDuration - elapsedTime;
+    const currentValue = param.value;
+    param.cancelScheduledValues(now);
+    param.setValueAtTime(currentValue, now);
+    param.linearRampToValueAtTime(targetValue, now + remainingTime);
+    startTime = now; // reset base for next pause
+  }
+
+  return {
+    pause,
+    resume,
+    getValue: () => param.value,
+    isRunning: () => isRunning,
+  };
+}
+
+function mkMeter(mod) {
+  const met = new t.DCMeter();
+  mod.connect(met);
+  const trackOscillation = () => {
+    let normalizedValue = (met.getValue() + 1) / 2;
+    animationBusWEB.emit("animationValueWEB", normalizedValue);
+  };
+  return { met, trackOscillation };
+}
+
+export const addMartigli = (s) => {
+  const synthM = mkOsc(0, -150, 0, getWaveform(s.waveformM));
+  const addmf0 = new t.Add(s.mf0); //here is adding s.mf0 to the input signal
+  const mul = new t.Multiply(s.ma).chain(addmf0, synthM.frequency);
+  const mod = mkOsc(1 / s.mp0, 0, 0, "sine", true).connect(mul);
+  let interval;
+  let ramp;
+  const meter = mkMeter(mod);
+
+  const pause = () => {
+    clearInterval(interval);
+    ramp.pause();
+  };
+
+  const resume = () => {
+    setTimeout(() => {
+      interval = setInterval(meter.trackOscillation, FRAMEPERIOD);
+    }, 200);
+    ramp.resume();
+  };
+
+  s.iniVolume = s.iniVolume || 0;
+  return {
+    start: (tt) => {
+      ramp = createPausableRamp(mod.frequency, t.now(), 1 / s.mp1, s.md);
+
+      synthM.start(tt);
+      mod.start(tt);
+      setTimeout(() => {
+        mod.stop();
+        mod.phase = 90; // per fare in modo che l'onda inizi dal basso (inizio di "inspira")
+        mod.start();
+      }, 10);
+
+      synthM.volume.linearRampTo(s.iniVolume - 20, 2, tt);
+      if (s.isOn) {
+        stopSessionBus.on("resumeSession", resume);
+
+        stopSessionBus.on("pauseSession", pause);
+        interval = setInterval(meter.trackOscillation, FRAMEPERIOD);
+      }
+      mod.frequency.linearRampTo(1 / s.mp1, s.md, tt); // TODO: check if better than rampTo
+    },
+    stop: (tt) => {
+      clearInterval(interval);
+      synthM.volume.linearRampTo(-250, 2, tt);
+      synthM.stop("+" + (tt + 2));
+      mod.stop("+" + (tt + 2));
+    },
+    nodes: {
+      synthM,
+      mul,
+      mod,
+      addmf0,
+    },
+    dispose: (tt) => {
+      setTimeout(() => {
+        synthM.dispose();
+        if (s.isOn) clearInterval(interval);
+        meter.met.dispose();
+        stopSessionBus.off("resumeSession", resume);
+      }, tt + 1);
+    },
+    volume: { synthM },
+    setVolume: (vol) => {
+      synthM.volume.linearRampTo(vol, 0.5);
+    },
+    type: "Martigli",
+    s,
+  };
+};
+=======================END TONE.JS MARTIGLI LOGIC===========================
+
+You need to understand that, with the functions that are currently present in the react-native-audio-api, this is quite difficult to achieve.
+This is why i am trying to build in c++, and use it via a turbo module.
+In addition to this, I would like the new version to be slightly different: the inhale and exhale phases need to not necessarily be of the same duration.
+The final function will take two more parameters, inhaleDur and exhaleDur.
+This likely means that the whole logic will need to be different, but the final result needs to be just as smooth and seamless.
+The panning logic also needs to be exactly like the tone.js one.
+
+This is an example of martigli voice:
+  {
+      id: 1.2,
+      mf0: 250,
+      waveformM: 0,
+      ma: 90,
+      mp0: 10,
+      mp1: 20,
+      md: 600,
+      type: "Martigli",
+      panOsc: 0,
+      panOscPeriod: 120,
+      panOscTrans: 20,
+      isOn: true,
+      iniVolume: null,
+    },
+
+if inhaleDur or exhaleDur are not specified (here, we only have mp0 and mp1), they will be of the same duration.
+this will allow older presets to also be compatible with the new logic (like this one).
+
+Leave MyOscillator node where it is, so that can be used as reference if needed, and create MartigliNode.
+
+
+Please tell me if you understand everything i am saying here. Do not write any code yet.
+We will not proceed if you have even the slightest doubt.
+

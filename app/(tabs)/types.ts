@@ -1,24 +1,36 @@
 import { AudioNode, BaseAudioContext } from "react-native-audio-api";
-import { IAudioNode, IBaseAudioContext } from "react-native-audio-api/lib/typescript/interfaces";
+import {
+  IAudioNode,
+  IBaseAudioContext,
+} from "react-native-audio-api/lib/typescript/interfaces";
 
-export interface IMyProcessorNode extends IAudioNode {
-    gain: number;
+export interface IMyOscillatorNode extends IAudioNode {
+  frequency: number;
+  volume: number;
 }
 
-export class MyProcessorNode extends AudioNode {
-    constructor(context: BaseAudioContext, node: IMyProcessorNode) {
-        super(context, node);
-    }
+export class MyOscillatorNode extends AudioNode {
+  constructor(context: BaseAudioContext, node: IMyOscillatorNode) {
+    super(context, node);
+  }
 
-    public set gain(value: number) {
-        (this.node as IMyProcessorNode).gain = value;
-    }
+  public set frequency(value: number) {
+    (this.node as IMyOscillatorNode).frequency = value;
+  }
 
-    public get gain(): number {
-        return (this.node as IMyProcessorNode).gain;
-    }
+  public get frequency(): number {
+    return (this.node as IMyOscillatorNode).frequency;
+  }
+
+  public set volume(value: number) {
+    (this.node as IMyOscillatorNode).volume = value;
+  }
+
+  public get volume(): number {
+    return (this.node as IMyOscillatorNode).volume;
+  }
 }
 
 declare global {
-    var createCustomProcessorNode: (context: IBaseAudioContext) => IMyProcessorNode;
+  var createMyOscillatorNode: (context: IBaseAudioContext) => IMyOscillatorNode;
 }
