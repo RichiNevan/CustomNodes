@@ -1,0 +1,97 @@
+This type of voice is similar to Martigli, with the difference that there are two carriers instead, whose frequency differs slightly.
+the lfo will drive both carriers alike, but only one of these will drive the animation.
+
+this is the old tone.js logic related to it:
+
+===============BEGINNING TONE.JS LOGIC============
+
+export const addMartigliBinaural2 = (s) => {
+  s.iniVolume = s.iniVolume || 0;
+  const synthL = mkOsc(s.fl, -150, -1, getWaveform(s.waveformL));
+  const synthR = mkOsc(s.fr, -150, 1, getWaveform(s.waveformR));
+  const gainNode = new t.Gain(0).toDestination();
+  const synthL_ = new t.Add(s.fl).connect(synthL.frequency);
+  const synthR_ = new t.Add(s.fr).connect(synthR.frequency);
+  const mul = new t.Multiply(s.ma).fan(synthL_, synthR_);
+  const mod = mkOsc(1 / s.mp0, 0, 0, "sine", true).connect(mul);
+  let interval;
+  let ramp;
+  const meter = mkMeter(mod);
+
+  const resume = () => {
+    setTimeout(() => {
+      interval = setInterval(meter.trackOscillation, FRAMEPERIOD);
+    }, 200);
+
+    ramp.resume();
+  };
+
+  const pause = () => {
+    clearInterval(interval);
+    ramp.pause();
+  };
+
+  const pan = setPanner(s, synthL, synthR, mod);
+  const all = [synthL, synthR, mod, pan];
+  return {
+    start: (tt) => {
+      ramp = createPausableRamp(mod.frequency, t.now(), 1 / s.mp1, s.md);
+      all.forEach((i) => i.start(tt));
+      setTimeout(() => {
+        mod.stop();
+        mod.phase = 90;
+        mod.start();
+      }, 10);
+
+      synthL.volume.linearRampTo(s.iniVolume - 20, 2, tt);
+      synthR.volume.linearRampTo(s.iniVolume - 20, 2, tt);
+      //mod.frequency.linearRampTo(1 / s.mp1, s.md, tt); // todo: check if better than rampTo
+      if (s.isOn) {
+        interval = setInterval(meter.trackOscillation, FRAMEPERIOD);
+
+        stopSessionBus.on("resumeSession", resume);
+
+        stopSessionBus.on("pauseSession", pause);
+      }
+    },
+    stop: (tt) => {
+      clearInterval(interval);
+      synthL.volume.linearRampTo(-250, 2, tt);
+      synthR.volume.linearRampTo(-250, 2, tt);
+      all.forEach((oscillator) => oscillator.stop("+" + (tt + 2)));
+    },
+    dispose: (tt) => {
+      // TODO: use this.nodes to dispose of all nodes?
+      setTimeout(() => {
+        all.forEach((i) => i.dispose());
+        if (s.isOn) clearInterval(interval);
+        meter.met.dispose();
+        stopSessionBus.off("resumeSession", resume);
+        stopSessionBus.off("pauseSession", pause);
+      }, tt + 1);
+    },
+    nodes: {
+      synthL,
+      synthR,
+      mul,
+      mod,
+      gainNode,
+      synthL_,
+      synthR_,
+      pan,
+    },
+    volume: { synthL, synthR, mod },
+    setVolume: (vol) => {
+      synthL.volume.linearRampTo(vol, 0.5);
+      synthR.volume.linearRampTo(vol, 0.5);
+      //mul.volume.linearRampTo(vol, 0.5);
+    },
+    type: "Martigli-Binaural",
+    s,
+  };
+};
+
+==============END TONE.JS LOGIC===================
+
+keep in mind that one session can have more than one martigli-typed voice, but only one will drive the animation.
+I think in the previous logic, this was handled by the isOn parameter. We will do the same.

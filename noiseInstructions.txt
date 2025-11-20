@@ -1,0 +1,4 @@
+this is the last type of voice, we will tackle it when all the others are working fine.
+it is basically noise, white, brown and pink, that can be toggled, and will have a short volume ramp when toggled on/off.
+
+This can also be handled in js, we will think together if it is worth it writing it in c++.

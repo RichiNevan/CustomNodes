@@ -1,0 +1,154 @@
+You need to understand what is it that we are really trying to achieve:
+a device that takes preset objects like this one:
+
+==========BEGINNING SAMPLE PRESET===========
+const testPreset = {
+  _id: "Uso Ricreativo",
+  header: {
+    med2: "Uso Ricreativo",
+    med2_key: "Uso Ricreativo",
+    onlyOnce: false,
+    d: 900,
+    isShownIndex: -1,
+    vcontrol: true,
+    creator: "fabbri",
+    communionSchedule: false,
+  },
+  voices: [
+    {
+      id: 1.2,
+      mf0: 250,
+      waveformM: 0,
+      ma: 90,
+      mp0: 10,
+      mp1: 20,
+      md: 600,
+      type: "Martigli",
+      panOsc: 0,
+      panOscPeriod: 120,
+      panOscTrans: 20,
+      isOn: true,
+      iniVolume: null,
+    },
+    {
+      fl: 250,
+      waveformL: 0,
+      fr: 285,
+      waveformR: 0,
+      ma: 90,
+      mp0: 10,
+      mp1: 20,
+      md: 850,
+      type: "Martigli-Binaural",
+      panOsc: 3,
+      panOscPeriod: 120,
+      panOscTrans: 20,
+      isOn: true,
+      iniVolume: null,
+    },
+    {
+      id: 1,
+      fl: 340,
+      waveformL: 0,
+      fr: 160,
+      waveformR: 0,
+      type: "Binaural",
+      panOsc: 1,
+      panOscPeriod: 120,
+      panOscTrans: 20,
+      iniVolume: null,
+    },
+    // {
+    //   id: 2,
+    //   nnotes: 50,
+    //   noctaves: 2,
+    //   f0: 200,
+    //   d: 10,
+    //   waveform: 0,
+    //   permfunc: 1,
+    //   type: "Symmetry",
+    //   iniVolume: null,
+    // },
+  ],
+};
+================END SAMPLE PRESET===============
+
+
+.........and is able to play the tracks together. 
+I am writing instructions for each type of voice in their related .txt files you find in the root of the project, same location of this file.
+
+The user will choose the preset he/she wants to listen to, will select the session's duration, and then press start.
+the voices in the selected preset will play as they are supposed to, until the timer expires. 
+The sound will then stop with a volume ramp. This needs to happen efficiently also when the app is in background.
+
+The user needs to be able to pause the session (without losing the martigli's incremented period), and resume it. 
+start, stop, pause and resume will all have a volume ramp, so that sound transitions are smooth.
+start and stop will have 1 second ramp (respectively, ramp up and ramp down, of course);
+pause will have a 0.5 seconds ramp down to silence;
+resume will also have a 0.5 seconds ramp up.
+
+
+
+the old tone.js logic used this model to handle the various different voices.
+
+=============BEGINNING TONE.JS OLD MODEL ============
+
+import {
+  addBinaural,
+  addMartigli,
+  addMartigliBinaural2,
+  addSymmetry,
+  addNoise,
+  addSample,
+  tone as t,
+  transport,
+} from "@/functions/audio";
+import { volumeBus } from "@/contexts/authContext";
+
+export class AVSWeb {
+  constructor(broadcastPeriod = 1000, preset) {
+    this.preset = preset;
+    this.broadcastPeriod = broadcastPeriod;
+    this.audio = this.startAudio();
+  }
+
+  startAudio() {
+    this.audioTracksInits = {
+      Binaural: addBinaural,
+      Symmetry: addSymmetry,
+      "Martigli-Binaural": addMartigliBinaural2,
+      Martigli: addMartigli,
+      Noise: addNoise,
+      Sample: addSample,
+    };
+
+    this.tone = t;
+    t.start();
+    transport.start();
+    this.audioTracks = [];
+    this.audioVoicesforVolumes = [];
+    for (let i = 0; i < this.preset.voices.length; i++) {
+      const voiceSettings = this.preset.voices[i];
+
+      const voice = this.audioTracksInits[voiceSettings.type](voiceSettings);
+
+      //console.log("Voice created: ", voiceSettings.type, voice);
+      this.audioTracks.push(voice);
+      this.audioVoicesforVolumes.push(voiceSettings);
+
+      setTimeout(() => {
+        volumeBus.emit("voicesArrayWEB", this.audioTracks);
+      }, 500);
+    }
+  }
+  pauseAudio() {
+    transport.pause();
+  }
+}
+
+=============END TONE.JS LOGIC=================
+
+we need to think of a similar js interface that efficiently can do the same job. 
+Keep in mind that there needs to be a way to change the various voice's parameters while they are running.
+The final idea (we will not do this now) will be to have an ai agent, to whom the user will describe how he/she feels, and this will modify the parameters accordingly.
+

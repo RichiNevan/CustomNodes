@@ -27,153 +27,227 @@ export interface IMartigliNode extends IAudioNode {
   shouldStart: boolean;
   shouldPause: boolean;
   shouldResume: boolean;
+  shouldStop: boolean;
 }
+
+export interface IBinauralNode extends IAudioNode {
+  fl: number;
+  fr: number;
+  waveformL: number;
+  waveformR: number;
+  volume: number;
+  panOsc: number;
+  panOscPeriod: number;
+  panOscTrans: number;
+  isPaused: boolean;
+  shouldStart: boolean;
+  shouldPause: boolean;
+  shouldResume: boolean;
+  shouldStop: boolean;
+  frameCount: number;
+}
+
+// Helper to create property accessors
+const createProp = (node: IAudioNode, name: string) => ({
+  get: () => (node as any)[name],
+  set: (v: any) => ((node as any)[name] = v),
+});
 
 export class MyOscillatorNode extends AudioNode {
   constructor(context: BaseAudioContext, node: IMyOscillatorNode) {
     super(context, node);
   }
-
-  public set frequency(value: number) {
-    (this.node as IMyOscillatorNode).frequency = value;
-  }
-
-  public get frequency(): number {
+  get frequency() {
     return (this.node as IMyOscillatorNode).frequency;
   }
-
-  public set volume(value: number) {
-    (this.node as IMyOscillatorNode).volume = value;
+  set frequency(v: number) {
+    (this.node as IMyOscillatorNode).frequency = v;
   }
-
-  public get volume(): number {
+  get volume() {
     return (this.node as IMyOscillatorNode).volume;
+  }
+  set volume(v: number) {
+    (this.node as IMyOscillatorNode).volume = v;
   }
 }
 
 export class MartigliNode extends AudioNode {
+  private n: IMartigliNode;
+
   constructor(context: BaseAudioContext, node: IMartigliNode) {
     super(context, node);
+    this.n = node;
   }
 
-  public set mf0(value: number) {
-    (this.node as IMartigliNode).mf0 = value;
+  get mf0() {
+    return this.n.mf0;
+  }
+  set mf0(v: number) {
+    this.n.mf0 = v;
+  }
+  get ma() {
+    return this.n.ma;
+  }
+  set ma(v: number) {
+    this.n.ma = v;
+  }
+  get mp0() {
+    return this.n.mp0;
+  }
+  set mp0(v: number) {
+    this.n.mp0 = v;
+  }
+  get mp1() {
+    return this.n.mp1;
+  }
+  set mp1(v: number) {
+    this.n.mp1 = v;
+  }
+  get md() {
+    return this.n.md;
+  }
+  set md(v: number) {
+    this.n.md = v;
+  }
+  get inhaleDur() {
+    return this.n.inhaleDur;
+  }
+  set inhaleDur(v: number) {
+    this.n.inhaleDur = v;
+  }
+  get exhaleDur() {
+    return this.n.exhaleDur;
+  }
+  set exhaleDur(v: number) {
+    this.n.exhaleDur = v;
+  }
+  get waveformM() {
+    return this.n.waveformM;
+  }
+  set waveformM(v: number) {
+    this.n.waveformM = v;
+  }
+  get volume() {
+    return this.n.volume;
+  }
+  set volume(v: number) {
+    this.n.volume = v;
+  }
+  get panOsc() {
+    return this.n.panOsc;
+  }
+  set panOsc(v: number) {
+    this.n.panOsc = v;
+  }
+  get panOscPeriod() {
+    return this.n.panOscPeriod;
+  }
+  set panOscPeriod(v: number) {
+    this.n.panOscPeriod = v;
+  }
+  get panOscTrans() {
+    return this.n.panOscTrans;
+  }
+  set panOscTrans(v: number) {
+    this.n.panOscTrans = v;
+  }
+  get animationValue() {
+    return this.n.animationValue;
+  }
+  get isPaused() {
+    return this.n.isPaused;
   }
 
-  public get mf0(): number {
-    return (this.node as IMartigliNode).mf0;
+  start() {
+    this.n.shouldStart = true;
+  }
+  pause() {
+    this.n.shouldPause = true;
+  }
+  resume() {
+    this.n.shouldResume = true;
+  }
+  stop() {
+    this.n.shouldStop = true;
+  }
+}
+
+export class BinauralNode extends AudioNode {
+  private n: IBinauralNode;
+
+  constructor(context: BaseAudioContext, node: IBinauralNode) {
+    super(context, node);
+    this.n = node;
   }
 
-  public set ma(value: number) {
-    (this.node as IMartigliNode).ma = value;
+  get fl() {
+    return this.n.fl;
+  }
+  set fl(v: number) {
+    this.n.fl = v;
+  }
+  get fr() {
+    return this.n.fr;
+  }
+  set fr(v: number) {
+    this.n.fr = v;
+  }
+  get waveformL() {
+    return this.n.waveformL;
+  }
+  set waveformL(v: number) {
+    this.n.waveformL = v;
+  }
+  get waveformR() {
+    return this.n.waveformR;
+  }
+  set waveformR(v: number) {
+    this.n.waveformR = v;
+  }
+  get volume() {
+    return this.n.volume;
+  }
+  set volume(v: number) {
+    this.n.volume = v;
+  }
+  get panOsc() {
+    return this.n.panOsc;
+  }
+  set panOsc(v: number) {
+    this.n.panOsc = v;
+  }
+  get panOscPeriod() {
+    return this.n.panOscPeriod;
+  }
+  set panOscPeriod(v: number) {
+    this.n.panOscPeriod = v;
+  }
+  get panOscTrans() {
+    return this.n.panOscTrans;
+  }
+  set panOscTrans(v: number) {
+    this.n.panOscTrans = v;
+  }
+  get isPaused() {
+    return this.n.isPaused;
   }
 
-  public get ma(): number {
-    return (this.node as IMartigliNode).ma;
+  start() {
+    this.n.shouldStart = true;
   }
-
-  public set mp0(value: number) {
-    (this.node as IMartigliNode).mp0 = value;
+  pause() {
+    this.n.shouldPause = true;
   }
-
-  public get mp0(): number {
-    return (this.node as IMartigliNode).mp0;
+  resume() {
+    this.n.shouldResume = true;
   }
-
-  public set mp1(value: number) {
-    (this.node as IMartigliNode).mp1 = value;
-  }
-
-  public get mp1(): number {
-    return (this.node as IMartigliNode).mp1;
-  }
-
-  public set md(value: number) {
-    (this.node as IMartigliNode).md = value;
-  }
-
-  public get md(): number {
-    return (this.node as IMartigliNode).md;
-  }
-
-  public set inhaleDur(value: number) {
-    (this.node as IMartigliNode).inhaleDur = value;
-  }
-
-  public get inhaleDur(): number {
-    return (this.node as IMartigliNode).inhaleDur;
-  }
-
-  public set exhaleDur(value: number) {
-    (this.node as IMartigliNode).exhaleDur = value;
-  }
-
-  public get exhaleDur(): number {
-    return (this.node as IMartigliNode).exhaleDur;
-  }
-
-  public set waveformM(value: number) {
-    (this.node as IMartigliNode).waveformM = value;
-  }
-
-  public get waveformM(): number {
-    return (this.node as IMartigliNode).waveformM;
-  }
-
-  public set volume(value: number) {
-    (this.node as IMartigliNode).volume = value;
-  }
-
-  public get volume(): number {
-    return (this.node as IMartigliNode).volume;
-  }
-
-  public set panOsc(value: number) {
-    (this.node as IMartigliNode).panOsc = value;
-  }
-
-  public get panOsc(): number {
-    return (this.node as IMartigliNode).panOsc;
-  }
-
-  public set panOscPeriod(value: number) {
-    (this.node as IMartigliNode).panOscPeriod = value;
-  }
-
-  public get panOscPeriod(): number {
-    return (this.node as IMartigliNode).panOscPeriod;
-  }
-
-  public set panOscTrans(value: number) {
-    (this.node as IMartigliNode).panOscTrans = value;
-  }
-
-  public get panOscTrans(): number {
-    return (this.node as IMartigliNode).panOscTrans;
-  }
-
-  public get animationValue(): number {
-    return (this.node as IMartigliNode).animationValue;
-  }
-
-  public get isPaused(): boolean {
-    return (this.node as IMartigliNode).isPaused;
-  }
-
-  public start(): void {
-    (this.node as IMartigliNode).shouldStart = true;
-  }
-
-  public pause(): void {
-    (this.node as IMartigliNode).shouldPause = true;
-  }
-
-  public resume(): void {
-    (this.node as IMartigliNode).shouldResume = true;
+  stop() {
+    this.n.shouldStop = true;
   }
 }
 
 declare global {
   var createMyOscillatorNode: (context: IBaseAudioContext) => IMyOscillatorNode;
   var createMartigliNode: (context: IBaseAudioContext) => IMartigliNode;
+  var createBinauralNode: (context: IBaseAudioContext) => IBinauralNode;
 }

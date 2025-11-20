@@ -1,12 +1,14 @@
 #include "NativeOscillatorModule.h"
 #include "MyOscillatorNodeHostObject.h"
 #include "MartigliNodeHostObject.h"
+#include "BinauralNodeHostObject.h"
 #include <iostream>
 #include <functional>
 #include <memory>
 #include <audioapi/HostObjects/BaseAudioContextHostObject.h>
 #include "MyOscillatorNode.h"
 #include "MartigliNode.h"
+#include "BinauralNode.h"
 #include <cstdio> // For printf debugging
 
 namespace facebook::react {
@@ -20,9 +22,11 @@ void NativeOscillatorModule::injectCustomProcessorInstaller(jsi::Runtime &runtim
   printf("NativeOscillatorModule: injectCustomProcessorInstaller called\n");
   auto oscillatorInstaller = createOscillatorInstaller(runtime);
   auto martigliInstaller = createMartigliInstaller(runtime);
+  auto binauralInstaller = createBinauralInstaller(runtime);
   runtime.global().setProperty(runtime, "createMyOscillatorNode", oscillatorInstaller);
   runtime.global().setProperty(runtime, "createMartigliNode", martigliInstaller);
-  printf("NativeOscillatorModule: 'createMyOscillatorNode' and 'createMartigliNode' injected globally\n");
+  runtime.global().setProperty(runtime, "createBinauralNode", binauralInstaller);
+  printf("NativeOscillatorModule: 'createMyOscillatorNode', 'createMartigliNode', and 'createBinauralNode' injected globally\n");
 }
 
 jsi::Function NativeOscillatorModule::createInstaller(jsi::Runtime &runtime) {
@@ -78,6 +82,32 @@ jsi::Function NativeOscillatorModule::createMartigliInstaller(jsi::Runtime &runt
           auto nodeHostObject = std::make_shared<audioapi::MartigliNodeHostObject>(node);
           return jsi::Object::createFromHostObject(runtime, nodeHostObject);
         }
+        return jsi::Object::createFromHostObject(runtime, nullptr);
+      });
+    }
+
+jsi::Function NativeOscillatorModule::createBinauralInstaller(jsi::Runtime &runtime) {
+    printf("NativeOscillatorModule: createBinauralInstaller called\n");
+  return jsi::Function::createFromHostFunction(
+      runtime,
+      jsi::PropNameID::forAscii(runtime, "createBinauralNode"),
+      0,
+      [](jsi::Runtime &runtime, const jsi::Value &thisVal, const jsi::Value *args, size_t count) {
+        printf("NativeOscillatorModule: createBinauralNode called from JS with %zu args\n", count);
+        if (count == 0) {
+          printf("NativeOscillatorModule: ERROR - no arguments passed to createBinauralNode\n");
+          return jsi::Object::createFromHostObject(runtime, nullptr);
+        }
+        auto object = args[0].getObject(runtime);
+        auto context = object.getHostObject<audioapi::BaseAudioContextHostObject>(runtime);
+        if (context != nullptr) {
+          printf("NativeOscillatorModule: Creating BinauralNode with context\n");
+          auto node = std::make_shared<audioapi::BinauralNode>(context->context_.get());
+          auto nodeHostObject = std::make_shared<audioapi::BinauralNodeHostObject>(node);
+          printf("NativeOscillatorModule: BinauralNode created successfully\n");
+          return jsi::Object::createFromHostObject(runtime, nodeHostObject);
+        }
+        printf("NativeOscillatorModule: ERROR - context is null\n");
         return jsi::Object::createFromHostObject(runtime, nullptr);
       });
     }

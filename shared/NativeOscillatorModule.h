@@ -18,6 +18,7 @@ private:
   jsi::Function createInstaller(jsi::Runtime &runtime);
   jsi::Function createOscillatorInstaller(jsi::Runtime &runtime);
   jsi::Function createMartigliInstaller(jsi::Runtime &runtime);
+  jsi::Function createBinauralInstaller(jsi::Runtime &runtime);
 };
 
 } // namespace facebook::react

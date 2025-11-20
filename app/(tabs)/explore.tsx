@@ -1,208 +1,226 @@
-import React, { useCallback, useEffect, useState, FC, useRef } from "react";
-import {
-  ActivityIndicator,
-  StyleSheet,
-  View,
-  Text,
-  ScrollView,
-} from "react-native";
+import React, { useEffect, useState, useRef } from "react";
+import { ActivityIndicator, StyleSheet, View, Text } from "react-native";
 import { Container, Button } from "../components";
 import NativeOscillatorModule from "../../specs/NativeOscillatorModule";
-import { MartigliNode } from "./types";
+import { MartigliNode, BinauralNode } from "./types";
 import { AudioContext } from "react-native-audio-api";
+
+const MARTIGLI_PRESET = {
+  mf0: 250,
+  ma: 90,
+  mp1: 20,
+  md: 600,
+  waveformM: 0,
+  inhaleDur: 3,
+  exhaleDur: 8,
+  panOsc: 0,
+  panOscPeriod: 120,
+  panOscTrans: 20,
+};
+
+const BINAURAL_PRESET = {
+  fl: 245,
+  fr: 260,
+  waveformL: 0,
+  waveformR: 0,
+  panOsc: 3,
+  panOscPeriod: 120,
+  panOscTrans: 20,
+};
 
 export default function TabTwoScreen() {
   const [isReady, setIsReady] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [isPlayingMartigli, setIsPlayingMartigli] = useState(false);
+  const [isPlayingBinaural, setIsPlayingBinaural] = useState(false);
   const [animationValue, setAnimationValue] = useState(0);
-
   const audioContext = useRef<AudioContext | null>(null);
   const martigliNode = useRef<MartigliNode | null>(null);
+  const binauralNode = useRef<BinauralNode | null>(null);
   const animationInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Example preset from prompts.txt
-  const examplePreset = {
-    id: 1.2,
-    mf0: 250,
-    waveformM: 0,
-    ma: 90,
-    mp0: undefined as number | undefined,
-    inhaleDur: 3,
-    exhaleDur: 8,
-    mp1: 20,
-    md: 600,
-    type: "Martigli",
-    panOsc: 0,
-    panOscPeriod: 120,
-    panOscTrans: 20,
-    isOn: true,
-    iniVolume: null,
-  };
-
   useEffect(() => {
-    if (audioContext.current) return;
-
     audioContext.current = new AudioContext();
-
-    if (NativeOscillatorModule) {
-      console.log("NativeOscillatorModule is available");
-      console.log("Injecting custom processor installer");
-      NativeOscillatorModule.injectCustomProcessorInstaller();
-    } else {
-      console.log("NativeOscillatorModule is not available");
-    }
+    NativeOscillatorModule?.injectCustomProcessorInstaller();
     setIsReady(true);
   }, []);
 
   const toggleMartigli = async () => {
     if (!audioContext.current) return;
-    console.log(`Toggling Martigli. Currently playing: ${isPlaying}`);
 
-    if (isPlaying) {
-      // Stop
-      if (martigliNode.current) {
-        martigliNode.current.disconnect();
+    if (isPlayingMartigli) {
+      martigliNode.current?.stop();
+      if (animationInterval.current) clearInterval(animationInterval.current);
+      // Wait for fade-out before disconnecting
+      setTimeout(() => {
+        martigliNode.current?.disconnect();
         martigliNode.current = null;
-      }
-      if (animationInterval.current) {
-        clearInterval(animationInterval.current);
-        animationInterval.current = null;
-      }
-      await audioContext.current.suspend();
-      setIsPlaying(false);
+      }, 1000);
+      setIsPlayingMartigli(false);
     } else {
-      // Start
-      await audioContext.current.resume();
+      if (!isPlayingMartigli && !isPlayingBinaural) {
+        await audioContext.current.resume();
+      }
 
-      // Create the Martigli node
       const node = new MartigliNode(
         audioContext.current,
         global.createMartigliNode(audioContext.current.context)
       );
-
-      // Apply the example preset
-      node.mf0 = examplePreset.mf0;
-      node.ma = examplePreset.ma;
-      
-      // Set asymmetric breathing if specified
-      if (examplePreset.inhaleDur && examplePreset.exhaleDur) {
-        node.inhaleDur = examplePreset.inhaleDur;
-        node.exhaleDur = examplePreset.exhaleDur;
-        // Calculate mp0 from inhale + exhale durations
-        node.mp0 = examplePreset.inhaleDur + examplePreset.exhaleDur;
-      } else {
-        node.mp0 = examplePreset.mp0 || 10;
-      }
-      
-      node.mp1 = examplePreset.mp1;
-      node.md = examplePreset.md;
-      node.waveformM = examplePreset.waveformM;
-      node.panOsc = examplePreset.panOsc;
-      node.panOscPeriod = examplePreset.panOscPeriod;
-      node.panOscTrans = examplePreset.panOscTrans;
-      node.volume = 0.3; // Set a reasonable volume
-
-      // Connect to destination
+      Object.assign(node, MARTIGLI_PRESET, {
+        mp0: MARTIGLI_PRESET.inhaleDur + MARTIGLI_PRESET.exhaleDur,
+        volume: 0.3,
+      });
       node.connect(audioContext.current.destination);
-
-      // Start the node
       node.start();
-
       martigliNode.current = node;
 
-      // Start animation value polling
       animationInterval.current = setInterval(() => {
-        if (martigliNode.current) {
-          setAnimationValue(martigliNode.current.animationValue);
-        }
-      }, 16); // ~60fps
+        setAnimationValue(martigliNode.current?.animationValue || 0);
+      }, 16);
 
-      setIsPlaying(true);
+      setIsPlayingMartigli(true);
     }
   };
 
-  const handlePauseResume = () => {
-    if (martigliNode.current) {
-      if (martigliNode.current.isPaused) {
-        martigliNode.current.resume();
-      } else {
-        martigliNode.current.pause();
+  const toggleBinaural = async () => {
+    if (!audioContext.current) return;
+
+    if (isPlayingBinaural) {
+      binauralNode.current?.stop();
+      // Wait for fade-out before disconnecting
+      setTimeout(() => {
+        binauralNode.current?.disconnect();
+        binauralNode.current = null;
+      }, 1000);
+      setIsPlayingBinaural(false);
+    } else {
+      if (!isPlayingMartigli && !isPlayingBinaural) {
+        await audioContext.current.resume();
       }
+
+      console.log("Creating BinauralNode...");
+      console.log("global.createBinauralNode exists?", typeof global.createBinauralNode);
+      console.log("audioContext.current.context:", audioContext.current.context);
+      
+      const rawNode = global.createBinauralNode(audioContext.current.context);
+      console.log("Raw node created:", rawNode);
+      
+      const node = new BinauralNode(audioContext.current, rawNode);
+      console.log("BinauralNode wrapper created:", node);
+      
+      Object.assign(node, BINAURAL_PRESET, { volume: 0.3 });
+      console.log("Properties assigned - fl:", node.fl, "fr:", node.fr, "volume:", node.volume);
+      
+      node.connect(audioContext.current.destination);
+      console.log("Node connected to destination");
+      
+      // Check shouldStart before and after calling start()
+      console.log("shouldStart before start():", (rawNode as any).shouldStart);
+      node.start();
+      console.log("shouldStart after start():", (rawNode as any).shouldStart);
+      console.log("Node start() called");
+      
+      // Poll to see if shouldStart changes
+      setTimeout(() => {
+        console.log("shouldStart after 100ms:", (rawNode as any).shouldStart);
+        console.log("frameCount after 100ms:", (rawNode as any).frameCount);
+      }, 100);
+      
+      setTimeout(() => {
+        console.log("frameCount after 500ms:", (rawNode as any).frameCount);
+      }, 500);
+      
+      binauralNode.current = node;
+
+      setIsPlayingBinaural(true);
     }
   };
 
   return (
     <Container centered>
-      {!isReady && <ActivityIndicator color="#FFFFFF" />}
+      {!isReady && <ActivityIndicator color="#FFF" />}
 
-      <View style={styles.content}>
-        <Text style={styles.title}>Martigli Breathing Guide</Text>
+      <Text style={styles.title}>Audio Voice Tests</Text>
 
+      <View style={styles.section}>
+        <Text style={styles.subtitle}>Martigli Breathing Guide</Text>
         <Button
-          title={isPlaying ? "Stop Martigli" : "Start Martigli"}
+          title={isPlayingMartigli ? "Stop Martigli" : "Start Martigli"}
           onPress={toggleMartigli}
           disabled={!isReady}
         />
 
-        {isPlaying && (
+        {isPlayingMartigli && (
           <>
             <Button
               title={martigliNode.current?.isPaused ? "Resume" : "Pause"}
-              onPress={handlePauseResume}
-              disabled={!isReady || !martigliNode.current}
+              onPress={() =>
+                martigliNode.current?.isPaused
+                  ? martigliNode.current?.resume()
+                  : martigliNode.current?.pause()
+              }
             />
 
-            <View style={styles.animationContainer}>
-              <Text style={styles.label}>Breathing Animation Value:</Text>
-              <View style={styles.progressBar}>
+            <View style={styles.box}>
+              <Text style={styles.label}>
+                Breathing: {(animationValue * 100).toFixed(0)}%
+              </Text>
+              <View style={styles.bar}>
                 <View
-                  style={[
-                    styles.progressFill,
-                    { width: `${animationValue * 100}%` },
-                  ]}
+                  style={[styles.fill, { width: `${animationValue * 100}%` }]}
                 />
               </View>
-              <Text style={styles.valueText}>
-                {(animationValue * 100).toFixed(1)}%
-              </Text>
             </View>
 
-            <View style={styles.presetInfo}>
-              <Text style={styles.infoLabel}>Preset Parameters:</Text>
-              <Text style={styles.infoText}>
-                Base Frequency: {examplePreset.mf0} Hz
+            <View style={styles.box}>
+              <Text style={styles.label}>Parameters</Text>
+              <Text style={styles.text}>
+                Frequency: {MARTIGLI_PRESET.mf0}Hz | Modulation:{" "}
+                {MARTIGLI_PRESET.ma}
               </Text>
-              <Text style={styles.infoText}>
-                Modulation Amount: {examplePreset.ma}
+              <Text style={styles.text}>
+                Inhale: {MARTIGLI_PRESET.inhaleDur}s | Exhale:{" "}
+                {MARTIGLI_PRESET.exhaleDur}s
               </Text>
-              {examplePreset.inhaleDur && examplePreset.exhaleDur ? (
-                <>
-                  <Text style={styles.infoText}>
-                    Inhale Duration: {examplePreset.inhaleDur}s
-                  </Text>
-                  <Text style={styles.infoText}>
-                    Exhale Duration: {examplePreset.exhaleDur}s
-                  </Text>
-                  <Text style={styles.infoText}>
-                    Initial Period: {examplePreset.inhaleDur + examplePreset.exhaleDur}s
-                  </Text>
-                </>
-              ) : (
-                <Text style={styles.infoText}>
-                  Initial Period: {examplePreset.mp0}s
-                </Text>
-              )}
-              <Text style={styles.infoText}>
-                Final Period: {examplePreset.mp1}s
+              <Text style={styles.text}>
+                Period:{" "}
+                {MARTIGLI_PRESET.inhaleDur + MARTIGLI_PRESET.exhaleDur}s →{" "}
+                {MARTIGLI_PRESET.mp1}s over {MARTIGLI_PRESET.md}s
               </Text>
-              <Text style={styles.infoText}>
-                Ramp Duration: {examplePreset.md}s
+            </View>
+          </>
+        )}
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.subtitle}>Binaural Beats</Text>
+        <Button
+          title={isPlayingBinaural ? "Stop Binaural" : "Start Binaural"}
+          onPress={toggleBinaural}
+          disabled={!isReady}
+        />
+
+        {isPlayingBinaural && (
+          <>
+            <Button
+              title={binauralNode.current?.isPaused ? "Resume" : "Pause"}
+              onPress={() =>
+                binauralNode.current?.isPaused
+                  ? binauralNode.current?.resume()
+                  : binauralNode.current?.pause()
+              }
+            />
+
+            <View style={styles.box}>
+              <Text style={styles.label}>Parameters</Text>
+              <Text style={styles.text}>
+                Left: {BINAURAL_PRESET.fl}Hz | Right: {BINAURAL_PRESET.fr}Hz
               </Text>
-              <Text style={styles.infoText}>
-                Panning:{" "}
-                {examplePreset.panOsc === 0
-                  ? "None"
-                  : `Mode ${examplePreset.panOsc}`}
+              <Text style={styles.text}>
+                Beat Frequency: {Math.abs(BINAURAL_PRESET.fl - BINAURAL_PRESET.fr)}Hz
+              </Text>
+              <Text style={styles.text}>
+                Pan Mode: {BINAURAL_PRESET.panOsc} | Period:{" "}
+                {BINAURAL_PRESET.panOscPeriod}s
               </Text>
             </View>
           </>
@@ -213,66 +231,24 @@ export default function TabTwoScreen() {
 }
 
 const styles = StyleSheet.create({
-  content: {
-    width: "100%",
-    paddingHorizontal: 20,
-    alignItems: "center",
-  },
-  title: {
-    color: "#FFFFFF",
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 30,
-    textAlign: "center",
-  },
-  animationContainer: {
-    width: "100%",
-    marginTop: 30,
-    padding: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    borderRadius: 10,
-  },
-  label: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 10,
-  },
-  progressBar: {
-    width: "100%",
-    height: 30,
-    backgroundColor: "rgba(0, 0, 0, 0.3)",
-    borderRadius: 15,
-    overflow: "hidden",
-    marginBottom: 10,
-  },
-  progressFill: {
-    height: "100%",
-    backgroundColor: "#1EB1FC",
-    borderRadius: 15,
-  },
-  valueText: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: "bold",
-    textAlign: "center",
-  },
-  presetInfo: {
+  title: { color: "#FFF", fontSize: 24, fontWeight: "bold", marginBottom: 30 },
+  section: { width: "100%", marginBottom: 30 },
+  subtitle: { color: "#FFF", fontSize: 18, fontWeight: "600", marginBottom: 15 },
+  box: {
     width: "100%",
     marginTop: 20,
-    padding: 15,
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    padding: 20,
+    backgroundColor: "rgba(255,255,255,0.1)",
     borderRadius: 10,
   },
-  infoLabel: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 10,
+  label: { color: "#FFF", fontSize: 16, fontWeight: "600", marginBottom: 10 },
+  bar: {
+    width: "100%",
+    height: 30,
+    backgroundColor: "rgba(0,0,0,0.3)",
+    borderRadius: 15,
+    overflow: "hidden",
   },
-  infoText: {
-    color: "#CCCCCC",
-    fontSize: 14,
-    marginBottom: 5,
-  },
+  fill: { height: "100%", backgroundColor: "#1EB1FC", borderRadius: 15 },
+  text: { color: "#CCC", fontSize: 14, marginBottom: 5 },
 });

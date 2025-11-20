@@ -2,22 +2,25 @@
 
 #include "MartigliNode.h"
 #include <audioapi/HostObjects/AudioNodeHostObject.h>
-
 #include <memory>
-#include <vector>
-#include <cstdio>
 
 namespace audioapi {
 using namespace facebook;
 
+// Macro to reduce boilerplate for property getters/setters
+#define MARTIGLI_PROPERTY(type, name) \
+  JSI_PROPERTY_GETTER(name) { \
+    return {std::static_pointer_cast<MartigliNode>(node_)->name}; \
+  } \
+  JSI_PROPERTY_SETTER(name) { \
+    std::static_pointer_cast<MartigliNode>(node_)->name = value.get##type(); \
+  }
+
 class MartigliNodeHostObject : public AudioNodeHostObject {
 public:
-  explicit MartigliNodeHostObject(
-      const std::shared_ptr<MartigliNode> &node)
+  explicit MartigliNodeHostObject(const std::shared_ptr<MartigliNode> &node)
       : AudioNodeHostObject(node) {
-    printf("MartigliNodeHostObject: Creating MartigliNodeHostObject\n");
-    
-    // Add all property getters
+    // Add getters
     addGetters(JSI_EXPORT_PROPERTY_GETTER(MartigliNodeHostObject, mf0));
     addGetters(JSI_EXPORT_PROPERTY_GETTER(MartigliNodeHostObject, ma));
     addGetters(JSI_EXPORT_PROPERTY_GETTER(MartigliNodeHostObject, mp0));
@@ -35,8 +38,9 @@ public:
     addGetters(JSI_EXPORT_PROPERTY_GETTER(MartigliNodeHostObject, shouldStart));
     addGetters(JSI_EXPORT_PROPERTY_GETTER(MartigliNodeHostObject, shouldPause));
     addGetters(JSI_EXPORT_PROPERTY_GETTER(MartigliNodeHostObject, shouldResume));
+    addGetters(JSI_EXPORT_PROPERTY_GETTER(MartigliNodeHostObject, shouldStop));
     
-    // Add all property setters
+    // Add setters
     addSetters(JSI_EXPORT_PROPERTY_SETTER(MartigliNodeHostObject, mf0));
     addSetters(JSI_EXPORT_PROPERTY_SETTER(MartigliNodeHostObject, ma));
     addSetters(JSI_EXPORT_PROPERTY_SETTER(MartigliNodeHostObject, mp0));
@@ -52,172 +56,35 @@ public:
     addSetters(JSI_EXPORT_PROPERTY_SETTER(MartigliNodeHostObject, shouldStart));
     addSetters(JSI_EXPORT_PROPERTY_SETTER(MartigliNodeHostObject, shouldPause));
     addSetters(JSI_EXPORT_PROPERTY_SETTER(MartigliNodeHostObject, shouldResume));
+    addSetters(JSI_EXPORT_PROPERTY_SETTER(MartigliNodeHostObject, shouldStop));
   }
 
-  ~MartigliNodeHostObject() override {
-      printf("MartigliNodeHostObject: Destroying MartigliNodeHostObject\n");
-  }
-
-  // Property getters
-  JSI_PROPERTY_GETTER(mf0) {
-    auto martigliNode = std::static_pointer_cast<MartigliNode>(node_);
-    return {martigliNode->mf0};
-  }
-
-  JSI_PROPERTY_GETTER(ma) {
-    auto martigliNode = std::static_pointer_cast<MartigliNode>(node_);
-    return {martigliNode->ma};
-  }
-
-  JSI_PROPERTY_GETTER(mp0) {
-    auto martigliNode = std::static_pointer_cast<MartigliNode>(node_);
-    return {martigliNode->mp0};
-  }
-
-  JSI_PROPERTY_GETTER(mp1) {
-    auto martigliNode = std::static_pointer_cast<MartigliNode>(node_);
-    return {martigliNode->mp1};
-  }
-
-  JSI_PROPERTY_GETTER(md) {
-    auto martigliNode = std::static_pointer_cast<MartigliNode>(node_);
-    return {martigliNode->md};
-  }
-
-  JSI_PROPERTY_GETTER(inhaleDur) {
-    auto martigliNode = std::static_pointer_cast<MartigliNode>(node_);
-    return {martigliNode->inhaleDur};
-  }
-
-  JSI_PROPERTY_GETTER(exhaleDur) {
-    auto martigliNode = std::static_pointer_cast<MartigliNode>(node_);
-    return {martigliNode->exhaleDur};
-  }
-
-  JSI_PROPERTY_GETTER(waveformM) {
-    auto martigliNode = std::static_pointer_cast<MartigliNode>(node_);
-    return {martigliNode->waveformM};
-  }
-
-  JSI_PROPERTY_GETTER(volume) {
-    auto martigliNode = std::static_pointer_cast<MartigliNode>(node_);
-    return {martigliNode->volume};
-  }
-
-  JSI_PROPERTY_GETTER(panOsc) {
-    auto martigliNode = std::static_pointer_cast<MartigliNode>(node_);
-    return {martigliNode->panOsc};
-  }
-
-  JSI_PROPERTY_GETTER(panOscPeriod) {
-    auto martigliNode = std::static_pointer_cast<MartigliNode>(node_);
-    return {martigliNode->panOscPeriod};
-  }
-
-  JSI_PROPERTY_GETTER(panOscTrans) {
-    auto martigliNode = std::static_pointer_cast<MartigliNode>(node_);
-    return {martigliNode->panOscTrans};
-  }
-
+  MARTIGLI_PROPERTY(Number, mf0)
+  MARTIGLI_PROPERTY(Number, ma)
+  MARTIGLI_PROPERTY(Number, mp0)
+  MARTIGLI_PROPERTY(Number, mp1)
+  MARTIGLI_PROPERTY(Number, md)
+  MARTIGLI_PROPERTY(Number, inhaleDur)
+  MARTIGLI_PROPERTY(Number, exhaleDur)
+  MARTIGLI_PROPERTY(Number, waveformM)
+  MARTIGLI_PROPERTY(Number, volume)
+  MARTIGLI_PROPERTY(Number, panOsc)
+  MARTIGLI_PROPERTY(Number, panOscPeriod)
+  MARTIGLI_PROPERTY(Number, panOscTrans)
+  MARTIGLI_PROPERTY(Bool, shouldStart)
+  MARTIGLI_PROPERTY(Bool, shouldPause)
+  MARTIGLI_PROPERTY(Bool, shouldResume)
+  MARTIGLI_PROPERTY(Bool, shouldStop)
+  
   JSI_PROPERTY_GETTER(animationValue) {
-    auto martigliNode = std::static_pointer_cast<MartigliNode>(node_);
-    return {martigliNode->animationValue};
+    return {std::static_pointer_cast<MartigliNode>(node_)->animationValue};
   }
-
+  
   JSI_PROPERTY_GETTER(isPaused) {
-    auto martigliNode = std::static_pointer_cast<MartigliNode>(node_);
-    return {martigliNode->isPaused};
-  }
-
-  JSI_PROPERTY_GETTER(shouldStart) {
-    auto martigliNode = std::static_pointer_cast<MartigliNode>(node_);
-    return {martigliNode->shouldStart};
-  }
-
-  JSI_PROPERTY_GETTER(shouldPause) {
-    auto martigliNode = std::static_pointer_cast<MartigliNode>(node_);
-    return {martigliNode->shouldPause};
-  }
-
-  JSI_PROPERTY_GETTER(shouldResume) {
-    auto martigliNode = std::static_pointer_cast<MartigliNode>(node_);
-    return {martigliNode->shouldResume};
-  }
-
-  // Property setters
-  JSI_PROPERTY_SETTER(mf0) {
-    auto martigliNode = std::static_pointer_cast<MartigliNode>(node_);
-    martigliNode->mf0 = value.getNumber();
-  }
-
-  JSI_PROPERTY_SETTER(ma) {
-    auto martigliNode = std::static_pointer_cast<MartigliNode>(node_);
-    martigliNode->ma = value.getNumber();
-  }
-
-  JSI_PROPERTY_SETTER(mp0) {
-    auto martigliNode = std::static_pointer_cast<MartigliNode>(node_);
-    martigliNode->mp0 = value.getNumber();
-  }
-
-  JSI_PROPERTY_SETTER(mp1) {
-    auto martigliNode = std::static_pointer_cast<MartigliNode>(node_);
-    martigliNode->mp1 = value.getNumber();
-  }
-
-  JSI_PROPERTY_SETTER(md) {
-    auto martigliNode = std::static_pointer_cast<MartigliNode>(node_);
-    martigliNode->md = value.getNumber();
-  }
-
-  JSI_PROPERTY_SETTER(inhaleDur) {
-    auto martigliNode = std::static_pointer_cast<MartigliNode>(node_);
-    martigliNode->inhaleDur = value.getNumber();
-  }
-
-  JSI_PROPERTY_SETTER(exhaleDur) {
-    auto martigliNode = std::static_pointer_cast<MartigliNode>(node_);
-    martigliNode->exhaleDur = value.getNumber();
-  }
-
-  JSI_PROPERTY_SETTER(waveformM) {
-    auto martigliNode = std::static_pointer_cast<MartigliNode>(node_);
-    martigliNode->waveformM = value.getNumber();
-  }
-
-  JSI_PROPERTY_SETTER(volume) {
-    auto martigliNode = std::static_pointer_cast<MartigliNode>(node_);
-    martigliNode->volume = value.getNumber();
-  }
-
-  JSI_PROPERTY_SETTER(panOsc) {
-    auto martigliNode = std::static_pointer_cast<MartigliNode>(node_);
-    martigliNode->panOsc = value.getNumber();
-  }
-
-  JSI_PROPERTY_SETTER(panOscPeriod) {
-    auto martigliNode = std::static_pointer_cast<MartigliNode>(node_);
-    martigliNode->panOscPeriod = value.getNumber();
-  }
-
-  JSI_PROPERTY_SETTER(panOscTrans) {
-    auto martigliNode = std::static_pointer_cast<MartigliNode>(node_);
-    martigliNode->panOscTrans = value.getNumber();
-  }
-
-  JSI_PROPERTY_SETTER(shouldStart) {
-    auto martigliNode = std::static_pointer_cast<MartigliNode>(node_);
-    martigliNode->shouldStart = value.getBool();
-  }
-
-  JSI_PROPERTY_SETTER(shouldPause) {
-    auto martigliNode = std::static_pointer_cast<MartigliNode>(node_);
-    martigliNode->shouldPause = value.getBool();
-  }
-
-  JSI_PROPERTY_SETTER(shouldResume) {
-    auto martigliNode = std::static_pointer_cast<MartigliNode>(node_);
-    martigliNode->shouldResume = value.getBool();
+    return {std::static_pointer_cast<MartigliNode>(node_)->isPaused};
   }
 };
+
+#undef MARTIGLI_PROPERTY
+
 } // namespace audioapi

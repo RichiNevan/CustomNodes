@@ -1,0 +1,96 @@
+This kind of voice is simply binaural beats.
+Here is the previous tone.js logic that handled it
+
+================BEGINNING TONE.JS LOGIC================
+export const mkOsc = (
+  freq,
+  vol,
+  pan,
+  type,
+  noConnect = false,
+  nostart = true,
+  phase = 0
+) => {
+  const panner = new t.Panner(d(pan, 1)); // Default pan is 0 (center), range -1 to +1.
+  if (!noConnect) panner.toDestination();
+
+  // TODO: Solve the phase
+  //console.log({ freq, vol, pan, type, phase }, "bef");
+  const synth = new t.Oscillator({
+    frequency: d(freq, 200),
+    type: d(type, "sine"),
+    //phase: (phase / Math.PI) * 180, // Convert radians to degrees since Tone.js uses degrees for phase.
+  }).connect(panner);
+
+  synth.sync();
+  synth.phase = phase; // TODO: assert phase is working. Find way to sample it other than meter.
+  synth.volume.value = d(vol, -200);
+
+  // Expose the panner for external use.
+  synth.panner = panner;
+
+  if (!nostart) synth.start(0);
+
+  return synth;
+};
+
+
+export const addBinaural = (s) => {
+  const synthL = mkOsc(s.fl, -150, -1, getWaveform(s.waveformL));
+  const synthR = mkOsc(s.fr, -150, 1, getWaveform(s.waveformR));
+  const pan = setPanner(s, synthL, synthR);
+  const all = [synthL, synthR, pan];
+  s.iniVolume = s.iniVolume || 0;
+  return {
+    start: (tt) => {
+      all.forEach((i) => i.start(tt));
+      synthL.volume.linearRampTo(
+        s.iniVolume - 20,
+        2, //this.initialFade
+        tt //tt sarebbe il tempo prima che parta il suono
+      );
+      synthR.volume.linearRampTo(s.iniVolume - 20, 2, tt);
+    },
+    stop: (tt) => {
+      synthL.volume.linearRampTo(-250, 2, tt);
+      synthR.volume.linearRampTo(-250, 2, tt);
+      all.forEach((i) => i.stop("+" + (tt + 5)));
+    },
+    nodes: {
+      synthL,
+      synthR,
+      pan,
+    },
+    dispose: () => {
+      all.forEach((i) => i.dispose());
+    },
+    volume: { synthL, synthR },
+    setVolume: (vol) => {
+      synthL.volume.linearRampTo(vol, 0.5);
+      synthR.volume.linearRampTo(vol, 0.5);
+    },
+    type: "Binaural",
+    s,
+  };
+};
+
+===========END TONE.JS LOGIC==================
+
+here is a sample preset that needs to be able to fit in:
+
+{
+      id: 1,
+      fl: 340,
+      waveformL: 0,
+      fr: 160,
+      waveformR: 0,
+      type: "Binaural",
+      panOsc: 1,
+      panOscPeriod: 120,
+      panOscTrans: 20,
+      iniVolume: null,
+    },
+
+
+we might consider to create a centralized place where initial volumes of the various voice types are set. we'll talk about this later.
+for now, you can either keep iniVolume null, and set the volume on js, or you can give it a "normal" value. 

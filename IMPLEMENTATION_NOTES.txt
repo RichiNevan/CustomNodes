@@ -1,0 +1,592 @@
+===========================================
+CUSTOM AUDIO NODES IMPLEMENTATION NOTES
+===========================================
+Date: November 20, 2025
+Project: React Native Audio API - Custom TurboModule Nodes
+
+===========================================
+PROJECT OVERVIEW
+===========================================
+
+This project implements custom audio nodes in C++ for a React Native application
+using the react-native-audio-api library. The goal is to create multiple voice
+types for an audio-visual stimulation (AVS) device that can run efficiently
+in the background on both iOS and Android.
+
+Voice Types to Implement:
+1. ✅ Martigli - Breathing guide with asymmetric inhale/exhale
+2. ✅ Binaural - Two-frequency binaural beats
+3. ⏳ Martigli-Binaural - Combined modulated binaural
+4. ⏳ Symmetry - Note sequences with permutations
+5. ⏳ Noise - White/brown/pink noise
+
+===========================================
+CRITICAL IMPLEMENTATION REQUIREMENTS
+===========================================
+
+1. ALL CUSTOM NODES MUST SET: isInitialized_ = true
+   - Without this, processNode() will NEVER be called
+   - Set in the constructor after calling AudioNode(context)
+
+2. INCLUDE PATHS:
+   - Headers: #include <audioapi/core/AudioNode.h>
+   - Audio processing: #include <audioapi/utils/AudioBus.h>
+   - Audio arrays: #include <audioapi/utils/AudioArray.h>
+   - Context: #include <audioapi/core/BaseAudioContext.h>
+   - Host objects: #include <audioapi/HostObjects/AudioNodeHostObject.h>
+
+3. METHOD SIGNATURES:
+   - Constructor: explicit MyNode(BaseAudioContext *context)
+   - Process: void processNode(const std::shared_ptr<AudioBus> &bus, int framesToProcess) override;
+
+4. CHANNEL SETUP:
+   - channelCount_ = 2;
+   - channelCountMode_ = ChannelCountMode::EXPLICIT;
+   - channelInterpretation_ = ChannelInterpretation::SPEAKERS;
+
+5. CONTROL FLAGS PATTERN:
+   - Use bool flags: shouldStart, shouldPause, shouldResume, shouldStop
+   - Check flags at start of processNode()
+   - Reset flags after handling: shouldStart = false;
+   - TypeScript calls: node.start() sets shouldStart = true
+
+6. VOLUME RAMPING (CRITICAL FOR SPEAKER SAFETY):
+   - Start: 1 second fade-in
+   - Stop: 1 second fade-out
+   - Pause: 0.5 second fade to silence
+   - Resume: 0.5 second fade back up
+   - Implementation: Linear interpolation with _currentGain and _targetGain
+
+===========================================
+MARTIGLI NODE IMPLEMENTATION
+===========================================
+
+Purpose: Breathing guide with LFO modulating carrier frequency
+Audio provides visual breathing cue through frequency changes
+
+Key Features:
+- Asymmetric breathing: separate inhale and exhale durations
+- LFO uses piecewise cosine: different curves for inhale/exhale phases
+- Frequency modulation: carrierFreq = lfoValue * ma + mf0
+- Period ramping: mp0 → mp1 over md seconds (for gradual breathing slowdown)
+- Animation value exposed for UI breathing indicator
+- 4 panning modes (0=none, 1=envelope, 2=sine, 3=synced to LFO)
+
+Parameters:
+- mf0: Base frequency (e.g., 250 Hz)
+- ma: Modulation amount (e.g., 90 Hz)
+- mp0: Initial breathing period (seconds)
+- mp1: Final breathing period (seconds)
+- md: Ramp duration for period change (seconds)
+- inhaleDur: Inhale duration (optional, for asymmetric)
+- exhaleDur: Exhale duration (optional, for asymmetric)
+- waveformM: 0=sine, 1=triangle, 2=square, 3=sawtooth
+- volume: Master volume
+- panOsc: Panning mode
+- panOscPeriod: Panning oscillator period
+- panOscTrans: Panning transition time
+
+Critical Formula for Asymmetric Breathing:
+- If inhaleDur and exhaleDur specified: mp0 = inhaleDur + exhaleDur
+- Scale factor: currentPeriod / (inhaleDur + exhaleDur)
+- Apply scale to both inhale and exhale durations
+
+LFO Calculation (Piecewise Cosine):
+```cpp
+float phase = fmod(_lfoPhaseTime, totalPeriod);
+float lfoValue = (phase < inhale) 
+    ? -cosf(M_PI * phase / inhale)
+    : cosf(M_PI * (phase - inhale) / exhale);
+```
+
+Files:
+- shared/MartigliNode.h
+- shared/MartigliNode.cpp
+- shared/MartigliNodeHostObject.h
+
+===========================================
+BINAURAL NODE IMPLEMENTATION
+===========================================
+
+Purpose: Two independent oscillators at different frequencies
+Creates binaural beat effect perceived in the brain
+
+Key Features:
+- Two carriers: left (fl Hz) and right (fr Hz)
+- Hard-panned: left carrier → left channel, right carrier → right channel
+- Beat frequency = |fl - fr| (perceived in brain)
+- Each carrier can have different waveform
+- 4 panning modes overlay on top of hard panning
+- Simpler than Martigli (no LFO modulation)
+
+Parameters:
+- fl: Left oscillator frequency
+- fr: Right oscillator frequency
+- waveformL: Left waveform (0=sine, 1=triangle, 2=square, 3=sawtooth)
+- waveformR: Right waveform
+- volume: Master volume
+- panOsc: Panning mode (0=none, 1=envelope, 2=sine, 3=none for binaural)
+- panOscPeriod: Panning period
+- panOscTrans: Panning transition time
+
+Example Preset:
+```javascript
+{
+  fl: 340,
+  fr: 160,
+  waveformL: 0,
+  waveformR: 0,
+  panOsc: 1,
+  panOscPeriod: 120,
+  panOscTrans: 20,
+}
+```
+
+Panning Logic:
+- panOsc 0 or 3: No modulation (both gains = 1.0)
+- panOsc 1: Envelope with attack/hold pattern
+- panOsc 2: Independent sine oscillator
+- Gains applied: leftChannel *= panGainL, rightChannel *= panGainR
+
+Files:
+- shared/BinauralNode.h
+- shared/BinauralNode.cpp
+- shared/BinauralNodeHostObject.h
+
+===========================================
+TURBOMODULE INTEGRATION
+===========================================
+
+NativeOscillatorModule registers all custom node creators:
+
+Files:
+- shared/NativeOscillatorModule.h
+- shared/NativeOscillatorModule.cpp
+
+Pattern for adding new nodes:
+1. Add createXXXInstaller() method declaration in .h
+2. Implement installer in .cpp:
+   ```cpp
+   jsi::Function NativeOscillatorModule::createXXXInstaller(jsi::Runtime &runtime) {
+     return jsi::Function::createFromHostFunction(
+       runtime,
+       jsi::PropNameID::forAscii(runtime, "createXXXNode"),
+       0,
+       [](jsi::Runtime &runtime, const jsi::Value &thisVal, 
+          const jsi::Value *args, size_t count) {
+         auto object = args[0].getObject(runtime);
+         auto context = object.getHostObject<audioapi::BaseAudioContextHostObject>(runtime);
+         if (context != nullptr) {
+           auto node = std::make_shared<audioapi::XXXNode>(context->context_.get());
+           auto nodeHostObject = std::make_shared<audioapi::XXXNodeHostObject>(node);
+           return jsi::Object::createFromHostObject(runtime, nodeHostObject);
+         }
+         return jsi::Object::createFromHostObject(runtime, nullptr);
+       });
+   }
+   ```
+3. Call installer in injectCustomProcessorInstaller():
+   ```cpp
+   auto xxxInstaller = createXXXInstaller(runtime);
+   runtime.global().setProperty(runtime, "createXXXNode", xxxInstaller);
+   ```
+
+Xcode Build Integration:
+- IMPORTANT: Manually add .cpp files to Xcode project build sources
+- Open .xcodeproj, find "Compile Sources" in Build Phases
+- Add YourNode.cpp to the list
+- Build will fail if .cpp not included
+
+===========================================
+TYPESCRIPT INTEGRATION
+===========================================
+
+Location: app/(tabs)/types.ts
+
+Pattern for each node type:
+1. Interface definition:
+   ```typescript
+   export interface IXXXNode extends IAudioNode {
+     param1: number;
+     param2: number;
+     shouldStart: boolean;
+     shouldStop: boolean;
+     // ... all C++ public properties
+   }
+   ```
+
+2. Wrapper class:
+   ```typescript
+   export class XXXNode extends AudioNode {
+     private n: IXXXNode;
+     
+     constructor(context: BaseAudioContext, node: IXXXNode) {
+       super(context, node);
+       this.n = node;
+     }
+     
+     // Getters/setters for all properties
+     get param1() { return this.n.param1; }
+     set param1(v: number) { this.n.param1 = v; }
+     
+     // Control methods
+     start() { this.n.shouldStart = true; }
+     stop() { this.n.shouldStop = true; }
+     pause() { this.n.shouldPause = true; }
+     resume() { this.n.shouldResume = true; }
+   }
+   ```
+
+3. Global declaration:
+   ```typescript
+   declare global {
+     var createXXXNode: (context: IBaseAudioContext) => IXXXNode;
+   }
+   ```
+
+===========================================
+JSI HOST OBJECT PATTERNS
+===========================================
+
+Two patterns used:
+
+1. MACRO PATTERN (BinauralNode - simpler):
+   ```cpp
+   #define BINAURAL_PROPERTY(type, name) \
+     if (propName == #name) { \
+       return jsi::Value(static_cast<double>(node_->name)); \
+     }
+   
+   #define BINAURAL_PROPERTY_SETTER(type, name) \
+     if (propName == #name) { \
+       node_->name = static_cast<type>(value.asNumber()); \
+       return; \
+     }
+   ```
+   
+   Use in get()/set() overrides with if-chain
+
+2. JSI_EXPORT PATTERN (MartigliNode - more structured):
+   ```cpp
+   #define MARTIGLI_PROPERTY(type, name) \
+     JSI_PROPERTY_GETTER(name) { \
+       return {std::static_pointer_cast<MartigliNode>(node_)->name}; \
+     } \
+     JSI_PROPERTY_SETTER(name) { \
+       std::static_pointer_cast<MartigliNode>(node_)->name = value.get##type(); \
+     }
+   ```
+   
+   Register in constructor:
+   ```cpp
+   addGetters(JSI_EXPORT_PROPERTY_GETTER(MartigliNodeHostObject, name));
+   addSetters(JSI_EXPORT_PROPERTY_SETTER(MartigliNodeHostObject, name));
+   ```
+
+===========================================
+PANNING MODES IMPLEMENTATION
+===========================================
+
+All nodes support 4 panning modes from original Tone.js logic:
+
+Mode 0 - No Panning:
+- panGainL = 1.0, panGainR = 1.0
+- Full signal to both channels (or hard-pan for binaural)
+
+Mode 1 - Envelope (Linear Transition and Hold):
+- Attack phase: ramp from 0 to 1 over panOscTrans seconds
+- Hold phase: stay at 1 for (panOscPeriod - panOscTrans) seconds
+- Release phase: ramp from 1 to 0 over panOscTrans seconds
+- Hold phase: stay at 0 for (panOscPeriod - panOscTrans) seconds
+- Total loop: panOscPeriod * 2 seconds
+- Envelope maps [0,1] to pan position [-1,1]
+
+Mode 2 - Independent Sine Oscillator:
+- panValue = sin(2π * phase)
+- Period: panOscPeriod seconds
+- Phase advances continuously
+- Maps sine wave to pan position
+
+Mode 3 - Synced to LFO (Martigli only):
+- Uses main LFO phase as panning source
+- Not applicable to Binaural (treated as mode 0)
+
+Pan to Gain Conversion:
+```cpp
+double pan = 2.0 * envValue - 1.0;  // [0,1] -> [-1,1]
+panGainL = (1.0 - pan) * 0.5;  // left gain: 1 when pan=-1, 0 when pan=1
+panGainR = (1.0 + pan) * 0.5;  // right gain: 0 when pan=-1, 1 when pan=1
+```
+
+===========================================
+VOLUME RAMPING IMPLEMENTATION
+===========================================
+
+Critical for speaker safety - prevents clicks and pops
+
+State Variables:
+```cpp
+float _currentGain = 0.0f;      // Current gain value
+float _targetGain = 1.0f;       // Target gain value
+float _rampDuration = 1.0f;     // Ramp duration in seconds
+float _rampElapsed = 0.0f;      // Elapsed time in ramp
+bool _isVolumeRamping = false;  // Ramping active flag
+```
+
+Ramp Triggers:
+- Start: currentGain=0, targetGain=1, duration=1s
+- Stop: targetGain=0, duration=1s
+- Pause: targetGain=0, duration=0.5s
+- Resume: targetGain=1, duration=0.5s
+
+Processing Loop:
+```cpp
+if (_isVolumeRamping) {
+    _rampElapsed += dt;
+    float t = _rampElapsed / _rampDuration;
+    if (t >= 1.0f) {
+        _currentGain = _targetGain;
+        _isVolumeRamping = false;
+    } else {
+        // Linear interpolation
+        _currentGain = _currentGain + (_targetGain - _currentGain) * t;
+    }
+}
+
+// Apply to audio
+carrier *= volume * _currentGain;
+```
+
+UI Integration:
+- Call node.stop() to trigger fade-out
+- Wait 1000ms before disconnect() to allow fade to complete
+- Don't just disconnect() - causes abrupt cutoff
+
+===========================================
+DEBUGGING TIPS
+===========================================
+
+1. printf() Logs May Not Appear:
+   - iOS: printf to stderr might not show in Console.app
+   - Better: Use frameCount property or animation value polling
+   - Add debug counter: int frameCount = 0; incremented in processNode()
+   - Poll from JS: setInterval(() => console.log(node.frameCount), 100)
+
+2. Node Not Processing:
+   - CHECK: isInitialized_ = true in constructor
+   - CHECK: Node connected to destination
+   - CHECK: AudioContext resumed
+   - CHECK: shouldStart flag set to true
+
+3. No Audio Output:
+   - CHECK: Volume > 0
+   - CHECK: Frequencies in audible range (20-20000 Hz)
+   - CHECK: Volume ramping not stuck at 0
+   - CHECK: Phase accumulation working (phase += freq / sampleRate)
+
+4. Build Errors:
+   - "File not found": Check include paths (audioapi/core/, audioapi/utils/)
+   - "Undefined symbols": .cpp file not added to Xcode build sources
+   - "std::clamp not found": Replace with manual if statements
+
+5. Property Bridge Not Working:
+   - Verify HostObject get()/set() implemented
+   - Check property registered (addGetters/addSetters or macro pattern)
+   - Verify TypeScript interface matches C++ properties exactly
+
+===========================================
+COMMON PITFALLS
+===========================================
+
+1. Forgetting isInitialized_ = true
+   - Symptom: No audio, processNode never called
+   - Solution: Set in constructor
+
+2. Wrong include paths
+   - Symptom: Build fails with "file not found"
+   - Solution: Use audioapi/core/ and audioapi/utils/ prefixes
+
+3. Missing .cpp in Xcode
+   - Symptom: Linker error for undefined symbols
+   - Solution: Manually add to Compile Sources in Xcode
+
+4. Not handling volume ramping
+   - Symptom: Clicks, pops, potential speaker damage
+   - Solution: Implement fade-in/out on all transitions
+
+5. Wrong method signature
+   - Symptom: processNode never called
+   - Solution: Use const std::shared_ptr<AudioBus> &bus
+
+6. Abrupt disconnect()
+   - Symptom: Click when stopping
+   - Solution: Call stop(), wait for fade, then disconnect()
+
+7. Phase wrapping overflow
+   - Symptom: Audio glitches over time
+   - Solution: Use fmod() or subtract floor(phase)
+
+===========================================
+NEXT STEPS - REMAINING NODES
+===========================================
+
+Martigli-Binaural Node:
+- Similar to Martigli but with two carriers (fl, fr)
+- LFO modulates both carriers identically
+- Only one carrier drives animation (isOn flag)
+- Parameters: fl, fr, waveformL, waveformR, ma, mp0, mp1, md, inhaleDur, exhaleDur
+- Panning modes: 0=none, 1=envelope, 2=sine, 3=synced to LFO
+
+Symmetry Node:
+- Generates note sequences based on permutations
+- Parameters: nnotes, noctaves, f0, d (duration), waveform, permfunc
+- Permutation functions: 0=shuffle, 1=rotateForward, 2=rotateBackward, 3=reverse, 4=none
+- Note frequency: f0 * (2^(noctaves/nnotes))^i
+- Uses envelope (attack/decay) if note separation > 10s
+- Background execution critical for this node
+
+Noise Node:
+- White, brown, and pink noise generation
+- Simple toggle with volume ramp
+- May be implementable in JS instead of C++
+- Parameters: type (0=white, 1=brown, 2=pink), volume
+
+===========================================
+PRESET STRUCTURE
+===========================================
+
+Full preset example:
+```javascript
+{
+  _id: "Uso Ricreativo",
+  header: {
+    med2: "Uso Ricreativo",
+    med2_key: "Uso Ricreativo",
+    onlyOnce: false,
+    d: 900,  // Session duration in seconds
+    vcontrol: true,
+    creator: "fabbri",
+  },
+  voices: [
+    {
+      id: 1.2,
+      mf0: 250,
+      waveformM: 0,
+      ma: 90,
+      mp0: 10,
+      mp1: 20,
+      md: 600,
+      type: "Martigli",
+      panOsc: 0,
+      panOscPeriod: 120,
+      panOscTrans: 20,
+      isOn: true,  // Drives animation
+      iniVolume: null,
+    },
+    {
+      fl: 340,
+      waveformL: 0,
+      fr: 160,
+      waveformR: 0,
+      type: "Binaural",
+      panOsc: 1,
+      panOscPeriod: 120,
+      panOscTrans: 20,
+      iniVolume: null,
+    },
+  ],
+}
+```
+
+Volume handling:
+- iniVolume: null means set in JS
+- iniVolume: number means use that value
+- Consider centralized initial volume management
+
+===========================================
+SESSION MANAGEMENT
+===========================================
+
+Requirements:
+- User selects preset and duration
+- All voices play simultaneously
+- Timer counts down
+- Background audio must continue
+- Pause/resume without losing state (e.g., Martigli period ramp)
+- Volume ramps on all transitions (1s start/stop, 0.5s pause/resume)
+
+Planned Architecture:
+```typescript
+class AVSManager {
+  audioContext: AudioContext;
+  voices: (MartigliNode | BinauralNode | SymmetryNode)[];
+  
+  startSession(preset, duration) {
+    // Create all voices from preset
+    // Connect to destination
+    // Start all voices with fade-in
+    // Start timer
+  }
+  
+  pauseSession() {
+    // Call pause() on all voices (0.5s fade)
+  }
+  
+  resumeSession() {
+    // Call resume() on all voices (0.5s fade)
+  }
+  
+  stopSession() {
+    // Call stop() on all voices (1s fade)
+    // Wait for fade completion
+    // Disconnect and cleanup
+  }
+}
+```
+
+===========================================
+USEFUL COMMANDS
+===========================================
+
+Build iOS:
+make runios
+
+Clean and rebuild:
+npx expo prebuild --clean
+make runios
+
+Add files to Xcode:
+Open ios/[project].xcodeproj in Xcode
+Navigate to project → Build Phases → Compile Sources
+Click + and add .cpp file
+
+View logs:
+- Metro bundler: Terminal where npx expo start runs
+- Native logs: Xcode console or Console.app (limited)
+
+===========================================
+CONTACT AND REFERENCES
+===========================================
+
+Original Tone.js implementation references:
+- See instruction files in project root:
+  - martigliInstructions.txt
+  - binauralInstructions.txt
+  - martigliBinauralInstructions.txt
+  - symmetryInstructions.txt
+  - noiseInstructions.txt
+  - overallInstructions.txt
+
+React Native Audio API:
+- https://github.com/itsmenewbie03/react-native-audio-api
+
+Key learnings:
+- Always set isInitialized_ = true
+- Volume ramping is mandatory
+- Manual Xcode file addition required
+- Use control flags pattern for start/stop/pause
+- Poll properties from JS for debugging
+
+===========================================
+END OF IMPLEMENTATION NOTES
+===========================================

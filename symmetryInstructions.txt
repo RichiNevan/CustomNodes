@@ -1,0 +1,122 @@
+Let me give you the old tone.js logic related to this type of voice:
+
+
+==============BEGINNING TONE.JS LOGIC==============
+
+export const addSymmetry = (s) => {
+  const freqFact = 2 ** (s.noctaves / s.nnotes);
+  const notes = [s.f0];
+  for (let i = 1; i < s.nnotes; i++) {
+    notes.push(s.f0 * freqFact ** i);
+  } // last note is one step before the first note of the "next octave" (or whatever nOctaves is)
+  const waveformType = getWaveform(s.waveform);
+  if (!waveformType) {
+    throw new Error(`Invalid waveform type: ${s.waveform}`);
+  }
+  const syOptions = { oscillator: { type: waveformType } };
+  const noteSep = s.d / notes.length;
+  if (noteSep > 10) syOptions.envelope = { attack: 2, decay: 2 };
+  const sy = new t.Synth(syOptions).toDestination().sync();
+
+  sy.volume.value = -100;
+  const noteDur = noteSep / 2;
+  const permfunc = permutations[s.permfunc];
+  const loop = new t.Loop((time) => {
+    // TODO: implement compound and peals
+    permfunc(notes);
+    // for (const note in notes) {
+    //   // fixme: use Pattern instead of Loop for this
+    //   sy.triggerAttackRelease(notes[note], noteDur, time + noteSep * note);
+    // }
+    for (const [index, note] of notes.entries()) {
+      sy.triggerAttackRelease(note, noteDur, time + noteSep * index);
+    }
+  }, s.d);
+
+  s.iniVolume = s.iniVolume || 0;
+  return {
+    start: (tt) => {
+      loop.start(tt);
+      sy.volume.linearRampTo(s.iniVolume - 20, 5, tt);
+    },
+    stop: (tt) => {
+      loop.stop("+" + (tt + 2));
+      sy.volume.linearRampTo(-250, 2, tt);
+    },
+    dispose: () => {
+      loop.dispose();
+      sy.dispose();
+    },
+    nodes: {
+      sy,
+      loop,
+    },
+    volume: { sy },
+    setVolume: (vol) => {
+      sy.volume.linearRampTo(vol, 0.5);
+    },
+    type: "Symmetry",
+    s,
+  };
+};
+
+const getWaveform = (wf) => waveforms[wf] || wf;
+
+inplaceShuffle = (array, inplace = true) => {
+  if (!inplace) {
+    array = array.slice();
+  }
+  // Fisher-Yates algorithm
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const temp = array[i];
+    array[i] = array[j];
+    array[j] = temp;
+  }
+  return array;
+};
+
+rotateArray = (array, forward = true) => {
+  if (forward) {
+    array.unshift(array.pop());
+  } else {
+    array.push(array.shift());
+  }
+};
+
+export const permfuncs = {
+  0: "shuffle",
+  1: "rotateForward",
+  2: "rotateBackward",
+  3: "reverse",
+  4: "none",
+};
+
+// export const permutations = {
+//   shuffle: inplaceShuffle,
+//   rotateForward: rotateArray,
+//   rotateBackward: (a) => rotateArray(a, false),
+//   reverse: (a) => a.reverse(),
+//   none: (a) => a,
+// };
+export const permutations = {
+  0: inplaceShuffle,
+  1: rotateArray,
+  2: (a) => rotateArray(a, false),
+  3: (a) => a.reverse(),
+  4: (a) => a,
+};
+
+export const waveforms = {
+  0: "sine",
+  1: "triangle",
+  2: "square",
+  3: "sawtooth",
+};
+
+==============END TONE.JS LOGIC====================
+
+
+As you can see, the volume ramp duration is based on the note duration.
+One of the difficulties of this voice was to have it running correctly when the app is in background.
+This is why i opted in writing this in c++. this way, the audio thread should keep running in this situation as well, both on ios and on android.
