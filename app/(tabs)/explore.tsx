@@ -98,37 +98,50 @@ export default function TabTwoScreen() {
       }
 
       console.log("Creating BinauralNode...");
-      console.log("global.createBinauralNode exists?", typeof global.createBinauralNode);
-      console.log("audioContext.current.context:", audioContext.current.context);
-      
+      console.log(
+        "global.createBinauralNode exists?",
+        typeof global.createBinauralNode
+      );
+      console.log(
+        "audioContext.current.context:",
+        audioContext.current.context
+      );
+
       const rawNode = global.createBinauralNode(audioContext.current.context);
       console.log("Raw node created:", rawNode);
-      
+
       const node = new BinauralNode(audioContext.current, rawNode);
       console.log("BinauralNode wrapper created:", node);
-      
+
       Object.assign(node, BINAURAL_PRESET, { volume: 0.3 });
-      console.log("Properties assigned - fl:", node.fl, "fr:", node.fr, "volume:", node.volume);
-      
+      console.log(
+        "Properties assigned - fl:",
+        node.fl,
+        "fr:",
+        node.fr,
+        "volume:",
+        node.volume
+      );
+
       node.connect(audioContext.current.destination);
       console.log("Node connected to destination");
-      
+
       // Check shouldStart before and after calling start()
       console.log("shouldStart before start():", (rawNode as any).shouldStart);
       node.start();
       console.log("shouldStart after start():", (rawNode as any).shouldStart);
       console.log("Node start() called");
-      
+
       // Poll to see if shouldStart changes
       setTimeout(() => {
         console.log("shouldStart after 100ms:", (rawNode as any).shouldStart);
         console.log("frameCount after 100ms:", (rawNode as any).frameCount);
       }, 100);
-      
+
       setTimeout(() => {
         console.log("frameCount after 500ms:", (rawNode as any).frameCount);
       }, 500);
-      
+
       binauralNode.current = node;
 
       setIsPlayingBinaural(true);
@@ -182,9 +195,8 @@ export default function TabTwoScreen() {
                 {MARTIGLI_PRESET.exhaleDur}s
               </Text>
               <Text style={styles.text}>
-                Period:{" "}
-                {MARTIGLI_PRESET.inhaleDur + MARTIGLI_PRESET.exhaleDur}s →{" "}
-                {MARTIGLI_PRESET.mp1}s over {MARTIGLI_PRESET.md}s
+                Period: {MARTIGLI_PRESET.inhaleDur + MARTIGLI_PRESET.exhaleDur}s
+                → {MARTIGLI_PRESET.mp1}s over {MARTIGLI_PRESET.md}s
               </Text>
             </View>
           </>
@@ -216,7 +228,8 @@ export default function TabTwoScreen() {
                 Left: {BINAURAL_PRESET.fl}Hz | Right: {BINAURAL_PRESET.fr}Hz
               </Text>
               <Text style={styles.text}>
-                Beat Frequency: {Math.abs(BINAURAL_PRESET.fl - BINAURAL_PRESET.fr)}Hz
+                Beat Frequency:{" "}
+                {Math.abs(BINAURAL_PRESET.fl - BINAURAL_PRESET.fr)}Hz
               </Text>
               <Text style={styles.text}>
                 Pan Mode: {BINAURAL_PRESET.panOsc} | Period:{" "}
@@ -233,7 +246,12 @@ export default function TabTwoScreen() {
 const styles = StyleSheet.create({
   title: { color: "#FFF", fontSize: 24, fontWeight: "bold", marginBottom: 30 },
   section: { width: "100%", marginBottom: 30 },
-  subtitle: { color: "#FFF", fontSize: 18, fontWeight: "600", marginBottom: 15 },
+  subtitle: {
+    color: "#FFF",
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 15,
+  },
   box: {
     width: "100%",
     marginTop: 20,
