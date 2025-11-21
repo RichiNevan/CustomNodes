@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { ActivityIndicator, StyleSheet, View, Text } from "react-native";
 import { Container, Button } from "../components";
 import NativeOscillatorModule from "../../specs/NativeOscillatorModule";
-import { MartigliNode, BinauralNode } from "./types";
+import { MartigliNode, BinauralNode, SymmetryNode } from "./types";
 import { AudioContext } from "react-native-audio-api";
 
 const MARTIGLI_PRESET = {
@@ -28,14 +28,28 @@ const BINAURAL_PRESET = {
   panOscTrans: 20,
 };
 
+const SYMMETRY_PRESET = {
+  id: 3,
+  nnotes: 2,
+  noctaves: 2,
+  f0: 200,
+  d: 1,
+  waveform: 0,
+  permfunc: 0,
+  type: "Symmetry",
+  iniVolume: null,
+};
+
 export default function TabTwoScreen() {
   const [isReady, setIsReady] = useState(false);
   const [isPlayingMartigli, setIsPlayingMartigli] = useState(false);
   const [isPlayingBinaural, setIsPlayingBinaural] = useState(false);
+  const [isPlayingSymmetry, setIsPlayingSymmetry] = useState(false);
   const [animationValue, setAnimationValue] = useState(0);
   const audioContext = useRef<AudioContext | null>(null);
   const martigliNode = useRef<MartigliNode | null>(null);
   const binauralNode = useRef<BinauralNode | null>(null);
+  const symmetryNode = useRef<SymmetryNode | null>(null);
   const animationInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -148,6 +162,45 @@ export default function TabTwoScreen() {
     }
   };
 
+  const toggleSymmetry = async () => {
+    if (!audioContext.current) return;
+
+    if (isPlayingSymmetry) {
+      symmetryNode.current?.stop();
+      // Wait for fade-out before disconnecting
+      setTimeout(() => {
+        symmetryNode.current?.disconnect();
+        symmetryNode.current = null;
+      }, 1000);
+      setIsPlayingSymmetry(false);
+    } else {
+      if (!isPlayingMartigli && !isPlayingBinaural && !isPlayingSymmetry) {
+        await audioContext.current.resume();
+      }
+
+      console.log("Creating SymmetryNode...");
+      const rawNode = global.createSymmetryNode(audioContext.current.context);
+      const node = new SymmetryNode(audioContext.current, rawNode);
+
+      Object.assign(node, SYMMETRY_PRESET, { volume: 0.3 });
+      console.log(
+        "Symmetry params - f0:",
+        node.f0,
+        "nnotes:",
+        node.nnotes,
+        "d:",
+        node.d
+      );
+
+      node.connect(audioContext.current.destination);
+      node.start();
+      console.log("SymmetryNode started");
+
+      symmetryNode.current = node;
+      setIsPlayingSymmetry(true);
+    }
+  };
+
   return (
     <Container centered>
       {!isReady && <ActivityIndicator color="#FFF" />}
@@ -234,6 +287,54 @@ export default function TabTwoScreen() {
               <Text style={styles.text}>
                 Pan Mode: {BINAURAL_PRESET.panOsc} | Period:{" "}
                 {BINAURAL_PRESET.panOscPeriod}s
+              </Text>
+            </View>
+          </>
+        )}
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.subtitle}>Symmetry Note Sequences</Text>
+        <Button
+          title={isPlayingSymmetry ? "Stop Symmetry" : "Start Symmetry"}
+          onPress={toggleSymmetry}
+          disabled={!isReady}
+        />
+
+        {isPlayingSymmetry && (
+          <>
+            <Button
+              title="Pause/Resume"
+              onPress={() =>
+                symmetryNode.current?.pause
+                  ? symmetryNode.current?.pause()
+                  : symmetryNode.current?.resume()
+              }
+            />
+
+            <View style={styles.box}>
+              <Text style={styles.label}>Parameters</Text>
+              <Text style={styles.text}>
+                Base Frequency: {SYMMETRY_PRESET.f0}Hz | Notes:{" "}
+                {SYMMETRY_PRESET.nnotes}
+              </Text>
+              <Text style={styles.text}>
+                Octave Span: {SYMMETRY_PRESET.noctaves} | Loop:{" "}
+                {SYMMETRY_PRESET.d}s
+              </Text>
+              <Text style={styles.text}>
+                Note Duration:{" "}
+                {(SYMMETRY_PRESET.d / SYMMETRY_PRESET.nnotes / 2).toFixed(2)}s |
+                Separation:{" "}
+                {(SYMMETRY_PRESET.d / SYMMETRY_PRESET.nnotes).toFixed(2)}s
+              </Text>
+              <Text style={styles.text}>
+                Permutation:{" "}
+                {
+                  ["Shuffle", "Rotate Fwd", "Rotate Back", "Reverse", "None"][
+                    SYMMETRY_PRESET.permfunc
+                  ]
+                }
               </Text>
             </View>
           </>

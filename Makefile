@@ -4,4 +4,7 @@ prepareios:
 
 runios:
 	make prepareios
-	npx expo run:ios --device d548d4589b4e42ae363a969e1f8a161e37c5af15
+	npx expo run:ios --device
+
+runandroid:
+	npx expo run:android --device

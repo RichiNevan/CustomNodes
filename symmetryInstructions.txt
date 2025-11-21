@@ -120,3 +120,4 @@ export const waveforms = {
 As you can see, the volume ramp duration is based on the note duration.
 One of the difficulties of this voice was to have it running correctly when the app is in background.
 This is why i opted in writing this in c++. this way, the audio thread should keep running in this situation as well, both on ios and on android.
+

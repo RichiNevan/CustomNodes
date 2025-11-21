@@ -47,6 +47,21 @@ export interface IBinauralNode extends IAudioNode {
   frameCount: number;
 }
 
+export interface ISymmetryNode extends IAudioNode {
+  f0: number;
+  noctaves: number;
+  nnotes: number;
+  d: number;
+  waveform: number;
+  permfunc: number;
+  volume: number;
+  shouldStart: boolean;
+  shouldPause: boolean;
+  shouldResume: boolean;
+  shouldStop: boolean;
+  frameCount: number;
+}
+
 // Helper to create property accessors
 const createProp = (node: IAudioNode, name: string) => ({
   get: () => (node as any)[name],
@@ -246,8 +261,74 @@ export class BinauralNode extends AudioNode {
   }
 }
 
+export class SymmetryNode extends AudioNode {
+  private n: ISymmetryNode;
+
+  constructor(context: BaseAudioContext, node: ISymmetryNode) {
+    super(context, node);
+    this.n = node;
+  }
+
+  get f0() {
+    return this.n.f0;
+  }
+  set f0(v: number) {
+    this.n.f0 = v;
+  }
+  get noctaves() {
+    return this.n.noctaves;
+  }
+  set noctaves(v: number) {
+    this.n.noctaves = v;
+  }
+  get nnotes() {
+    return this.n.nnotes;
+  }
+  set nnotes(v: number) {
+    this.n.nnotes = v;
+  }
+  get d() {
+    return this.n.d;
+  }
+  set d(v: number) {
+    this.n.d = v;
+  }
+  get waveform() {
+    return this.n.waveform;
+  }
+  set waveform(v: number) {
+    this.n.waveform = v;
+  }
+  get permfunc() {
+    return this.n.permfunc;
+  }
+  set permfunc(v: number) {
+    this.n.permfunc = v;
+  }
+  get volume() {
+    return this.n.volume;
+  }
+  set volume(v: number) {
+    this.n.volume = v;
+  }
+
+  start() {
+    this.n.shouldStart = true;
+  }
+  pause() {
+    this.n.shouldPause = true;
+  }
+  resume() {
+    this.n.shouldResume = true;
+  }
+  stop() {
+    this.n.shouldStop = true;
+  }
+}
+
 declare global {
   var createMyOscillatorNode: (context: IBaseAudioContext) => IMyOscillatorNode;
   var createMartigliNode: (context: IBaseAudioContext) => IMartigliNode;
   var createBinauralNode: (context: IBaseAudioContext) => IBinauralNode;
+  var createSymmetryNode: (context: IBaseAudioContext) => ISymmetryNode;
 }

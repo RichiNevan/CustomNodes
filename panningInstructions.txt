@@ -1,42 +1,30 @@
-The panning logic is applied only to Binaural and Martigli-Binaural types of voice. It behaves in the same way for both types:
+The panning logic is applied only to Binaural and Martigli-Binaural types of voice.
+ It behaves in the same way for both types:
 
 if (panOsc === 0) {
+
         in this case, no panning is applied, the left carrier stays on the left side, the right one stays on the right side
+
 } else if (panOsc === 1) {
+
+        in this case, the right carrier will play on the right, left on the left for a specific period of time (panOscPeriod).
+        During the last panOscTrans seconds of panOscPeriod, the two carriers will switch to their opposite side in a crossfade.
+        When this is done, the whole process will repeat, going back to the original position, and so on.
+        
+} else if (panOsc === 2) {
+
         here, the two oscillators switch from one side to the other over a given period of time (panOscPeriod).
-        The left carrier will start playing only on the left side, the right only on the right one. Slowly, over panOscPeriod seconds, they will switch to the other side. Once this has happened, the process starts over going back to the starting point, and so on.
-} else if (panOsc === 2) {
-        in this case, the panning follows the oscillation of the martigli voice (if there is more than one martigli-typed voice, the one that drives the animation will be the one taken in consideration).
-        this means that, at the trough of the martigli wave, the left carrier will play on the left, the right on the right. they will switch during the martigli oscillation, to be at their opposite when the oscillation is at peak. 
-} else if (panOsc === 3) {
-        in this last case, the right carrier will play on the right, left on the left for a specific period of time (panOscPeriod). When this time expires, the two carrier will switch to their opposite side over a period of panOscTrans seconds.
-        When this is done, the situation will again stay still for panOscPeriod seconds, and then the oscillator will again switch, over panOscTrans seconds.
-}
-
-
-MARTIGLI:
-
-if (panOsc === 0) {
-
-} else if (panOsc === 1) {
-
-} else if (panOsc === 2) {
+        The left carrier will start playing only on the left side, the right only on the right one. 
+        Over panOscPeriod seconds, they will switch to the other side and back, in a sinusoidal pattern. 
+        Once this has happened, the process starts over again.
 
 } else if (panOsc === 3) {
 
-}
+        in case of binaural voice, the panning follows the oscillation of the martigli voice that drives the animation.
+        (if there is more than one martigli-typed voice, the one that drives the animation will be the one taken in consideration).
+        this means that, at the trough of the martigli wave, the left carrier will play on the left, the right on the right.
+        they will switch during the martigli oscillation, to be at their opposite when the oscillation is at peak. 
 
-MARTIGLI-BINAURAL:
-
-if (panOsc === 0) {
-
-} else if (panOsc === 1) {
-
-} else if (panOsc === 2) {
-
-} else if (panOsc === 3) {
+        in case of martigli-binaural voice, of course, the two carriers will switch position during the course of their own oscillation.
 
 }
-
-SYMMETRIES:
-symmetries do not use any specific panning logic

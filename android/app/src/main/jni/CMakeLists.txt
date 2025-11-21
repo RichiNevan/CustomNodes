@@ -10,6 +10,9 @@ include(${REACT_ANDROID_DIR}/cmake-utils/ReactNative-application.cmake)
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
   ${ROOT}/shared/NativeOscillatorModule.cpp
   ${ROOT}/shared/MyOscillatorNode.cpp
+  ${ROOT}/shared/BinauralNode.cpp
+  ${ROOT}/shared/MartigliNode.cpp
+  ${ROOT}/shared/SymmetryNode.cpp
 )
 
 target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC
