@@ -37,10 +37,16 @@ public:
   // State
   float animationValue = 0.0f;
   bool isPaused = false;
+  bool isOn = false;              // Only the active martigli publishes to registry
   bool shouldStart = false;
   bool shouldPause = false;
   bool shouldResume = false;
   bool shouldStop = false;
+  
+  // Current calculated values (read-only, updated during processing)
+  float currentInhaleDur = 0.0f;
+  float currentExhaleDur = 0.0f;
+  float currentPeriod = 0.0f;
   
   void start();
   void pause();

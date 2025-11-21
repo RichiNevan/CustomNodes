@@ -24,6 +24,10 @@ export interface IMartigliNode extends IAudioNode {
   panOscTrans: number;
   animationValue: number;
   isPaused: boolean;
+  isOn: boolean;
+  currentInhaleDur: number;
+  currentExhaleDur: number;
+  currentPeriod: number;
   shouldStart: boolean;
   shouldPause: boolean;
   shouldResume: boolean;
@@ -39,6 +43,7 @@ export interface IBinauralNode extends IAudioNode {
   panOsc: number;
   panOscPeriod: number;
   panOscTrans: number;
+  martigliAnimationValue: number;
   isPaused: boolean;
   shouldStart: boolean;
   shouldPause: boolean;
@@ -172,6 +177,21 @@ export class MartigliNode extends AudioNode {
   get isPaused() {
     return this.n.isPaused;
   }
+  get isOn() {
+    return this.n.isOn;
+  }
+  set isOn(v: boolean) {
+    this.n.isOn = v;
+  }
+  get currentInhaleDur() {
+    return this.n.currentInhaleDur;
+  }
+  get currentExhaleDur() {
+    return this.n.currentExhaleDur;
+  }
+  get currentPeriod() {
+    return this.n.currentPeriod;
+  }
 
   start() {
     this.n.shouldStart = true;
@@ -242,6 +262,12 @@ export class BinauralNode extends AudioNode {
   }
   set panOscTrans(v: number) {
     this.n.panOscTrans = v;
+  }
+  get martigliAnimationValue() {
+    return this.n.martigliAnimationValue;
+  }
+  set martigliAnimationValue(v: number) {
+    this.n.martigliAnimationValue = v;
   }
   get isPaused() {
     return this.n.isPaused;

@@ -14,9 +14,9 @@ private:
   double phaseR_ = 0.0;
   double panPhase_ = 0.0;
 
-  // Envelope state for panOsc mode 1
-  double envPhase_ = 0.0;
-  bool envAttack_ = true;
+  // Envelope state for panOsc mode 1 (ping-pong crossfade)
+  double panOscPhase_ = 0.0;  // Phase within the full 2*panOscPeriod cycle
+  bool isSwapped_ = false;    // Track if carriers are currently swapped
 
   // Audio state
   bool isRunning_ = false;
@@ -36,9 +36,10 @@ public:
   double volume = 0.5;
 
   // Panning oscillator settings
-  int panOsc = 0;          // 0=none, 1=envelope, 2=independent sine, 3=synced (treated as 0 for binaural)
+  int panOsc = 0;          // 0=none, 1=envelope, 2=independent sine, 3=synced to martigli
   double panOscPeriod = 120.0;
   double panOscTrans = 20.0;
+  float martigliAnimationValue = 0.0f; // For panOsc=3: 0.0 to 1.0 from Martigli voice
 
   // Control flags
   bool shouldStart = false;

@@ -1,4 +1,5 @@
 #include "BinauralNode.h"
+#include "AnimationValueRegistry.h"
 #include <audioapi/core/BaseAudioContext.h>
 #include <audioapi/utils/AudioBus.h>
 #include <audioapi/utils/AudioArray.h>
@@ -144,44 +145,70 @@ void BinauralNode::processNode(
     double panGainR = 1.0;
 
     if (panOsc == 1) {
-      // Envelope mode: linear transition and hold
-      double envValue;
-      if (envAttack_) {
-        // Attack phase
-        envValue = envPhase_ / panOscTrans;
-        if (envPhase_ >= panOscTrans) {
-          envAttack_ = false;
-          envPhase_ = 0.0;
-        }
+      // Ping-pong crossfade mode
+      // Full cycle = 2 * panOscPeriod
+      // Phase 1: Hold at original (0 to panOscPeriod - panOscTrans)
+      // Phase 2: Crossfade to opposite (panOscPeriod - panOscTrans to panOscPeriod)
+      // Phase 3: Hold at opposite (panOscPeriod to 2*panOscPeriod - panOscTrans)
+      // Phase 4: Crossfade back (2*panOscPeriod - panOscTrans to 2*panOscPeriod)
+      
+      double fullCycleDuration = 2.0 * panOscPeriod;
+      double phaseInCycle = fmod(panOscPhase_, fullCycleDuration);
+      double crossfadeValue = 0.0; // 0.0 = normal position, 1.0 = swapped
+      
+      if (phaseInCycle < (panOscPeriod - panOscTrans)) {
+        // Phase 1: Hold at original
+        crossfadeValue = 0.0;
+      } else if (phaseInCycle < panOscPeriod) {
+        // Phase 2: Crossfade to opposite
+        double transitionProgress = (phaseInCycle - (panOscPeriod - panOscTrans)) / panOscTrans;
+        crossfadeValue = transitionProgress; // 0 -> 1
+      } else if (phaseInCycle < (2.0 * panOscPeriod - panOscTrans)) {
+        // Phase 3: Hold at opposite
+        crossfadeValue = 1.0;
       } else {
-        // Hold phase
-        envValue = 1.0;
-        if (envPhase_ >= (panOscPeriod - panOscTrans)) {
-          envAttack_ = true;
-          envPhase_ = 0.0;
-        }
+        // Phase 4: Crossfade back to original
+        double transitionProgress = (phaseInCycle - (2.0 * panOscPeriod - panOscTrans)) / panOscTrans;
+        crossfadeValue = 1.0 - transitionProgress; // 1 -> 0
       }
-      // Clamp envValue to [0,1]
-      if (envValue < 0.0) envValue = 0.0;
-      if (envValue > 1.0) envValue = 1.0;
-      // Map [0,1] to pan position: 0->left, 1->right
-      // mul2, addm1, negate pattern from Tone.js
-      double pan = 2.0 * envValue - 1.0;  // [0,1] -> [-1,1]
-      panGainL = (1.0 - pan) * 0.5;  // left gain: 1 when pan=-1, 0 when pan=1
-      panGainR = (1.0 + pan) * 0.5;  // right gain: 0 when pan=-1, 1 when pan=1
+      
+      // Apply crossfade
+      // When crossfadeValue = 0: L→L, R→R (panGainL=1, panGainR=1)
+      // When crossfadeValue = 1: L→R, R→L (panGainL=0, panGainR=0, but we swap the carriers)
+      panGainL = 1.0 - crossfadeValue;
+      panGainR = crossfadeValue;
 
     } else if (panOsc == 2) {
-      // Independent sine oscillator
-      double panValue = std::sin(twoPi * panPhase_);
-      panGainL = (1.0 - panValue) * 0.5;
-      panGainR = (1.0 + panValue) * 0.5;
+      // Continuous sinusoidal panning
+      // sin(0) = 0 -> carriers at normal position
+      // sin(π/2) = 1 -> carriers fully swapped
+      // sin(π) = 0 -> carriers back to normal
+      // sin(3π/2) = -1 -> carriers swapped opposite direction
+      // sin(2π) = 0 -> back to start
+      double sinValue = std::sin(twoPi * panPhase_);
+      // Map sin [-1,1] to crossfade [0,1,0,1] pattern
+      // We want: -1→0, 0→0.5, 1→1
+      double crossfadeValue = (sinValue + 1.0) * 0.5; // [-1,1] -> [0,1]
+      panGainL = 1.0 - crossfadeValue;
+      panGainR = crossfadeValue;
+      
+    } else if (panOsc == 3) {
+      // Follow Martigli animation value from registry
+      // Read directly from registry (no JS bridge crossing!)
+      double animValue = AnimationValueRegistry::getInstance().getMartigliAnimationValue();
+      // animValue: 0.0 (trough) to 1.0 (peak)
+      // At trough: normal position (L→L, R→R)
+      // At peak: swapped position (L→R, R→L)
+      panGainL = 1.0 - animValue;
+      panGainR = animValue;
     }
-    // panOsc == 0 or 3: no panning modulation (both gains = 1.0)
+    // panOsc == 0: no panning (both gains = 1.0)
 
-    // For binaural: left carrier goes to left channel, right carrier goes to right channel
-    // Panning modulation is applied on top
-    leftChannel[i] = static_cast<float>(carrierL * panGainL);
-    rightChannel[i] = static_cast<float>(carrierR * panGainR);
+    // Apply panning by mixing carriers to channels
+    // Normal: leftCarrier→leftChannel (panGainL=1, panGainR=0)
+    // Swapped: leftCarrier→rightChannel (panGainL=0, panGainR=1)
+    leftChannel[i] = static_cast<float>(carrierL * panGainL + carrierR * panGainR);
+    rightChannel[i] = static_cast<float>(carrierR * panGainL + carrierL * panGainR);
 
     // Advance phases if not paused
     if (!isPaused) {
@@ -192,13 +219,21 @@ void BinauralNode::processNode(
       if (phaseL_ >= 1.0) phaseL_ -= std::floor(phaseL_);
       if (phaseR_ >= 1.0) phaseR_ -= std::floor(phaseR_);
 
-      // Advance panning phase
+      // Advance panning phases
       if (panOsc == 1) {
-        envPhase_ += 1.0 / sampleRate;
+        panOscPhase_ += frameDuration;
+        // Wrap at full cycle (2 * panOscPeriod)
+        double fullCycle = 2.0 * panOscPeriod;
+        if (panOscPhase_ >= fullCycle) {
+          panOscPhase_ = fmod(panOscPhase_, fullCycle);
+        }
       } else if (panOsc == 2) {
-        panPhase_ += (1.0 / panOscPeriod) / sampleRate;
-        if (panPhase_ >= 1.0) panPhase_ -= std::floor(panPhase_);
+        panPhase_ += frameDuration / panOscPeriod;
+        if (panPhase_ >= 1.0) {
+          panPhase_ = fmod(panPhase_, 1.0);
+        }
       }
+      // panOsc == 3: no phase advancement needed (uses external value)
     }
   }
 }

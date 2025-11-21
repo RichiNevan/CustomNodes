@@ -16,19 +16,20 @@
 		A858B8832ED0B1B400048673 /* SymmetryNode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A858B8812ED0B1B400048673 /* SymmetryNode.cpp */; };
 		A872DE5F2ECDE93D005492C2 /* MyOscillatorNode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A872DE5A2ECDE93D005492C2 /* MyOscillatorNode.cpp */; };
 		A872DE602ECDE93D005492C2 /* NativeOscillatorModule.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A872DE5D2ECDE93D005492C2 /* NativeOscillatorModule.cpp */; };
+		B404664EAFD6CA433A25350B /* libPods-rnaudioapiturbomodules.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 50EBB3D72961D2E0F40D8416 /* libPods-rnaudioapiturbomodules.a */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
-		EEAA64BD10D167DB4F0CD525 /* libPods-rnaudioapiturbomodules.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 8E96807B8748965F0A0041FD /* libPods-rnaudioapiturbomodules.a */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
 		FD8349B7B88DA4DC3B3ABBAD /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = D806FEB85BBDDAA1610D81DC /* ExpoModulesProvider.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		05665EBBD95E16DF5DBA3C97 /* Pods-rnaudioapiturbomodules.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-rnaudioapiturbomodules.release.xcconfig"; path = "Target Support Files/Pods-rnaudioapiturbomodules/Pods-rnaudioapiturbomodules.release.xcconfig"; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* rnaudioapiturbomodules.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = rnaudioapiturbomodules.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = rnaudioapiturbomodules/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = rnaudioapiturbomodules/Info.plist; sourceTree = "<group>"; };
-		1EDD9C7C3BB7BC849F236429 /* Pods-rnaudioapiturbomodules.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-rnaudioapiturbomodules.release.xcconfig"; path = "Target Support Files/Pods-rnaudioapiturbomodules/Pods-rnaudioapiturbomodules.release.xcconfig"; sourceTree = "<group>"; };
 		41D8150ACCA80CD76C71DBC4 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = rnaudioapiturbomodules/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		8E96807B8748965F0A0041FD /* libPods-rnaudioapiturbomodules.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-rnaudioapiturbomodules.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		50EBB3D72961D2E0F40D8416 /* libPods-rnaudioapiturbomodules.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-rnaudioapiturbomodules.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		6F0811C600BC7D867EBC4E35 /* Pods-rnaudioapiturbomodules.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-rnaudioapiturbomodules.debug.xcconfig"; path = "Target Support Files/Pods-rnaudioapiturbomodules/Pods-rnaudioapiturbomodules.debug.xcconfig"; sourceTree = "<group>"; };
 		A84395BF2ECF5B0D002A1DCA /* NativeOscillatorModuleProvider.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NativeOscillatorModuleProvider.h; sourceTree = "<group>"; };
 		A84395C02ECF5B0D002A1DCA /* NativeOscillatorModuleProvider.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = NativeOscillatorModuleProvider.mm; sourceTree = "<group>"; };
 		A8545E502ECF978700B8854D /* MartigliNode.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MartigliNode.h; sourceTree = "<group>"; };
@@ -45,10 +46,10 @@
 		A872DE5B2ECDE93D005492C2 /* MyOscillatorNodeHostObject.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MyOscillatorNodeHostObject.h; sourceTree = "<group>"; };
 		A872DE5C2ECDE93D005492C2 /* NativeOscillatorModule.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NativeOscillatorModule.h; sourceTree = "<group>"; };
 		A872DE5D2ECDE93D005492C2 /* NativeOscillatorModule.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = NativeOscillatorModule.cpp; sourceTree = "<group>"; };
+		A8A895FD2ED0FC0D00C5B7FA /* AnimationValueRegistry.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AnimationValueRegistry.h; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = rnaudioapiturbomodules/SplashScreen.storyboard; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
 		D806FEB85BBDDAA1610D81DC /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-rnaudioapiturbomodules/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
-		D99CDF91B3A5F3A11BBD7E66 /* Pods-rnaudioapiturbomodules.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-rnaudioapiturbomodules.debug.xcconfig"; path = "Target Support Files/Pods-rnaudioapiturbomodules/Pods-rnaudioapiturbomodules.debug.xcconfig"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = rnaudioapiturbomodules/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* rnaudioapiturbomodules-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "rnaudioapiturbomodules-Bridging-Header.h"; path = "rnaudioapiturbomodules/rnaudioapiturbomodules-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -59,7 +60,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				EEAA64BD10D167DB4F0CD525 /* libPods-rnaudioapiturbomodules.a in Frameworks */,
+				B404664EAFD6CA433A25350B /* libPods-rnaudioapiturbomodules.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -69,8 +70,8 @@
 		01E7B304B0A2E95EEA0B71C8 /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				D99CDF91B3A5F3A11BBD7E66 /* Pods-rnaudioapiturbomodules.debug.xcconfig */,
-				1EDD9C7C3BB7BC849F236429 /* Pods-rnaudioapiturbomodules.release.xcconfig */,
+				6F0811C600BC7D867EBC4E35 /* Pods-rnaudioapiturbomodules.debug.xcconfig */,
+				05665EBBD95E16DF5DBA3C97 /* Pods-rnaudioapiturbomodules.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -95,7 +96,7 @@
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				8E96807B8748965F0A0041FD /* libPods-rnaudioapiturbomodules.a */,
+				50EBB3D72961D2E0F40D8416 /* libPods-rnaudioapiturbomodules.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -142,6 +143,7 @@
 		A872DE5E2ECDE93D005492C2 /* shared */ = {
 			isa = PBXGroup;
 			children = (
+				A8A895FD2ED0FC0D00C5B7FA /* AnimationValueRegistry.h */,
 				A858B8802ED0B1B400048673 /* SymmetryNode.h */,
 				A858B8812ED0B1B400048673 /* SymmetryNode.cpp */,
 				A858B8822ED0B1B400048673 /* SymmetryNodeHostObject.h */,
@@ -185,14 +187,14 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "rnaudioapiturbomodules" */;
 			buildPhases = (
-				0D21166A85E277A20144D680 /* [CP] Check Pods Manifest.lock */,
+				5013AD48B300249537FC2A3C /* [CP] Check Pods Manifest.lock */,
 				806788A83A5E70C957BB2CE3 /* [Expo] Configure project */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
-				9DD1D9E301DF6B6B4FB32EF3 /* [CP] Embed Pods Frameworks */,
-				E1E0510C5C9D875512488284 /* [CP] Copy Pods Resources */,
+				A012C0657FAE64F0C028BE28 /* [CP] Embed Pods Frameworks */,
+				EE82D8E3E5C207C90E8ADD54 /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -266,7 +268,7 @@
 			shellPath = /bin/sh;
 			shellScript = "if [[ -f \"$PODS_ROOT/../.xcode.env\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env\"\nfi\nif [[ -f \"$PODS_ROOT/../.xcode.env.local\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env.local\"\nfi\n\n# The project root by default is one level up from the ios directory\nexport PROJECT_ROOT=\"$PROJECT_DIR\"/..\n\nif [[ \"$CONFIGURATION\" = *Debug* ]]; then\n  export SKIP_BUNDLING=1\nfi\nif [[ -z \"$ENTRY_FILE\" ]]; then\n  # Set the entry JS file using the bundler's entry resolution.\n  export ENTRY_FILE=\"$(\"$NODE_BINARY\" -e \"require('expo/scripts/resolveAppEntry')\" \"$PROJECT_ROOT\" ios absolute | tail -n 1)\"\nfi\n\nif [[ -z \"$CLI_PATH\" ]]; then\n  # Use Expo CLI\n  export CLI_PATH=\"$(\"$NODE_BINARY\" --print \"require.resolve('@expo/cli', { paths: [require.resolve('expo/package.json')] })\")\"\nfi\nif [[ -z \"$BUNDLE_COMMAND\" ]]; then\n  # Default Expo CLI command for bundling\n  export BUNDLE_COMMAND=\"export:embed\"\nfi\n\n# Source .xcode.env.updates if it exists to allow\n# SKIP_BUNDLING to be unset if needed\nif [[ -f \"$PODS_ROOT/../.xcode.env.updates\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env.updates\"\nfi\n# Source local changes to allow overrides\n# if needed\nif [[ -f \"$PODS_ROOT/../.xcode.env.local\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env.local\"\nfi\n\n`\"$NODE_BINARY\" --print \"require('path').dirname(require.resolve('react-native/package.json')) + '/scripts/react-native-xcode.sh'\"`\n\n";
 		};
-		0D21166A85E277A20144D680 /* [CP] Check Pods Manifest.lock */ = {
+		5013AD48B300249537FC2A3C /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -307,7 +309,7 @@
 			shellPath = /bin/sh;
 			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-rnaudioapiturbomodules/expo-configure-project.sh\"\n";
 		};
-		9DD1D9E301DF6B6B4FB32EF3 /* [CP] Embed Pods Frameworks */ = {
+		A012C0657FAE64F0C028BE28 /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -325,7 +327,7 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-rnaudioapiturbomodules/Pods-rnaudioapiturbomodules-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		E1E0510C5C9D875512488284 /* [CP] Copy Pods Resources */ = {
+		EE82D8E3E5C207C90E8ADD54 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -384,7 +386,7 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = D99CDF91B3A5F3A11BBD7E66 /* Pods-rnaudioapiturbomodules.debug.xcconfig */;
+			baseConfigurationReference = 6F0811C600BC7D867EBC4E35 /* Pods-rnaudioapiturbomodules.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -423,7 +425,7 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 1EDD9C7C3BB7BC849F236429 /* Pods-rnaudioapiturbomodules.release.xcconfig */;
+			baseConfigurationReference = 05665EBBD95E16DF5DBA3C97 /* Pods-rnaudioapiturbomodules.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;

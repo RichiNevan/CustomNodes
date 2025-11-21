@@ -1,4 +1,5 @@
 #include "MartigliNode.h"
+#include "AnimationValueRegistry.h"
 #include <audioapi/core/BaseAudioContext.h>
 #include <audioapi/utils/AudioBus.h>
 #include <audioapi/utils/AudioArray.h>
@@ -73,6 +74,9 @@ void MartigliNode::processNode(const std::shared_ptr<AudioBus> &bus, int framesT
         currentPeriod = mp1;
     }
     
+    // Store current period for JS access
+    this->currentPeriod = currentPeriod;
+    
     // Calculate inhale/exhale durations
     float inhale, exhale;
     if (inhaleDur > 0.0f && exhaleDur > 0.0f) {
@@ -82,6 +86,10 @@ void MartigliNode::processNode(const std::shared_ptr<AudioBus> &bus, int framesT
     } else {
         inhale = exhale = currentPeriod * 0.5f;
     }
+    
+    // Store current inhale/exhale for JS access
+    this->currentInhaleDur = inhale;
+    this->currentExhaleDur = exhale;
     
     int numChannels = bus->getNumberOfChannels();
     
@@ -107,6 +115,9 @@ void MartigliNode::processNode(const std::shared_ptr<AudioBus> &bus, int framesT
             : cosf(M_PI * (phase - inhale) / exhale);
         
         animationValue = (lfoValue + 1.0f) * 0.5f;
+        
+        // Publish animation value to registry if this is the active martigli
+        AnimationValueRegistry::getInstance().setMartigliAnimationValue(animationValue, isOn);
         
         // Modulation: lfoValue * ma + mf0 = carrier frequency
         float carrierFreq = std::clamp(lfoValue * ma + mf0, 20.0f, 20000.0f);

@@ -35,6 +35,10 @@ public:
     addGetters(JSI_EXPORT_PROPERTY_GETTER(MartigliNodeHostObject, panOscTrans));
     addGetters(JSI_EXPORT_PROPERTY_GETTER(MartigliNodeHostObject, animationValue));
     addGetters(JSI_EXPORT_PROPERTY_GETTER(MartigliNodeHostObject, isPaused));
+    addGetters(JSI_EXPORT_PROPERTY_GETTER(MartigliNodeHostObject, isOn));
+    addGetters(JSI_EXPORT_PROPERTY_GETTER(MartigliNodeHostObject, currentInhaleDur));
+    addGetters(JSI_EXPORT_PROPERTY_GETTER(MartigliNodeHostObject, currentExhaleDur));
+    addGetters(JSI_EXPORT_PROPERTY_GETTER(MartigliNodeHostObject, currentPeriod));
     addGetters(JSI_EXPORT_PROPERTY_GETTER(MartigliNodeHostObject, shouldStart));
     addGetters(JSI_EXPORT_PROPERTY_GETTER(MartigliNodeHostObject, shouldPause));
     addGetters(JSI_EXPORT_PROPERTY_GETTER(MartigliNodeHostObject, shouldResume));
@@ -53,6 +57,7 @@ public:
     addSetters(JSI_EXPORT_PROPERTY_SETTER(MartigliNodeHostObject, panOsc));
     addSetters(JSI_EXPORT_PROPERTY_SETTER(MartigliNodeHostObject, panOscPeriod));
     addSetters(JSI_EXPORT_PROPERTY_SETTER(MartigliNodeHostObject, panOscTrans));
+    addSetters(JSI_EXPORT_PROPERTY_SETTER(MartigliNodeHostObject, isOn));
     addSetters(JSI_EXPORT_PROPERTY_SETTER(MartigliNodeHostObject, shouldStart));
     addSetters(JSI_EXPORT_PROPERTY_SETTER(MartigliNodeHostObject, shouldPause));
     addSetters(JSI_EXPORT_PROPERTY_SETTER(MartigliNodeHostObject, shouldResume));
@@ -71,6 +76,7 @@ public:
   MARTIGLI_PROPERTY(Number, panOsc)
   MARTIGLI_PROPERTY(Number, panOscPeriod)
   MARTIGLI_PROPERTY(Number, panOscTrans)
+  MARTIGLI_PROPERTY(Bool, isOn)
   MARTIGLI_PROPERTY(Bool, shouldStart)
   MARTIGLI_PROPERTY(Bool, shouldPause)
   MARTIGLI_PROPERTY(Bool, shouldResume)
@@ -82,6 +88,18 @@ public:
   
   JSI_PROPERTY_GETTER(isPaused) {
     return {std::static_pointer_cast<MartigliNode>(node_)->isPaused};
+  }
+  
+  JSI_PROPERTY_GETTER(currentInhaleDur) {
+    return {std::static_pointer_cast<MartigliNode>(node_)->currentInhaleDur};
+  }
+  
+  JSI_PROPERTY_GETTER(currentExhaleDur) {
+    return {std::static_pointer_cast<MartigliNode>(node_)->currentExhaleDur};
+  }
+  
+  JSI_PROPERTY_GETTER(currentPeriod) {
+    return {std::static_pointer_cast<MartigliNode>(node_)->currentPeriod};
   }
 };
 

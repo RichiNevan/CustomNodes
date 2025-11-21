@@ -58,17 +58,17 @@ const testPreset = {
       panOscTrans: 20,
       iniVolume: null,
     },
-    // {
-    //   id: 2,
-    //   nnotes: 50,
-    //   noctaves: 2,
-    //   f0: 200,
-    //   d: 10,
-    //   waveform: 0,
-    //   permfunc: 1,
-    //   type: "Symmetry",
-    //   iniVolume: null,
-    // },
+    {
+      id: 2,
+      nnotes: 50,
+      noctaves: 2,
+      f0: 200,
+      d: 10,
+      waveform: 0,
+      permfunc: 1,
+      type: "Symmetry",
+      iniVolume: null,
+    },
   ],
 };
 ================END SAMPLE PRESET===============
@@ -149,6 +149,6 @@ export class AVSWeb {
 =============END TONE.JS LOGIC=================
 
 we need to think of a similar js interface that efficiently can do the same job. 
-Keep in mind that there needs to be a way to change the various voice's parameters while they are running.
+Keep in mind that there needs to be a way to change the various voice's parameters while they are running. 
 The final idea (we will not do this now) will be to have an ai agent, to whom the user will describe how he/she feels, and this will modify the parameters accordingly.
 

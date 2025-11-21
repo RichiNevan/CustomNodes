@@ -223,9 +223,9 @@ float SymmetryNode::calculateEnvelopeGain() {
   
   if (!_useEnvelope) {
     // For short notes, use much shorter envelope times
-    // Use 10% of note duration or 50ms minimum, whichever is larger
-    attackTime = std::max(0.05f, _noteDur * 0.1f);
-    releaseTime = std::max(0.05f, _noteDur * 0.1f);
+    // Use 10% of note duration or 100ms minimum, whichever is larger
+    attackTime = std::max(0.1f, _noteDur * 0.1f);
+    releaseTime = std::max(0.1f, _noteDur * 0.1f);
   }
   
   // Attack phase
