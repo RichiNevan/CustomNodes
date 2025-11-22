@@ -54,7 +54,7 @@ void BinauralNode::processNode(
     // Don't set isPaused yet - let the audio ramp down first
     startGain_ = isRamping_ ? currentGain_ : 1.0f; // If not ramping, assume full volume
     targetGain_ = 0.0f;
-    rampDuration_ = 1.0f; // Increased to 1s for testing
+    rampDuration_ = 0.5f;
     rampElapsed_ = 0.0f;
     isRamping_ = true;
   }

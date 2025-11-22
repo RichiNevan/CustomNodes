@@ -77,7 +77,7 @@ void SymmetryNode::processNode(const std::shared_ptr<AudioBus> &bus, int framesT
     _rampState = RampState::RAMPING_DOWN;
     _targetGain = 0.0f;
     _rampProgress = 0.0f;
-    _rampDuration = 1.0f; // Increased to 1s for testing
+    _rampDuration = 0.5f;
   }
   
   if (shouldResume) {
@@ -216,16 +216,16 @@ float SymmetryNode::calculateEnvelopeGain() {
   float gain = 1.0f;
   
   // Use shorter attack/release times for short notes to prevent clicks
-  // For long notes (noteSep > 10s), use 2s attack/decay
-  // For short notes, use proportional times (e.g., 10% of note duration)
   float attackTime = ENVELOPE_ATTACK;
   float releaseTime = ENVELOPE_DECAY;
   
   if (!_useEnvelope) {
-    // For short notes, use much shorter envelope times
-    // Use 10% of note duration or 100ms minimum, whichever is larger
-    attackTime = std::max(0.1f, _noteDur * 0.1f);
-    releaseTime = std::max(0.1f, _noteDur * 0.1f);
+    // For short notes, use a fixed minimum envelope to prevent clicks
+    // Use 5ms minimum (very fast but enough to prevent clicks)
+    // Or 15% of note duration, whichever is larger (up to 50ms max for very long notes)
+    float fifteenPercent = _noteDur * 0.15f;
+    attackTime = std::min(0.05f, std::max(0.005f, fifteenPercent));
+    releaseTime = std::min(0.05f, std::max(0.005f, fifteenPercent));
   }
   
   // Attack phase

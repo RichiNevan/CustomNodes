@@ -38,6 +38,9 @@ const SessionTest = () => {
   // Volume control
   const [masterVolume, setMasterVolume] = useState(DEFAULT_MASTER_VOLUME);
   const [voices, setVoices] = useState<any[]>([]);
+  
+  // Animation value from Martigli breathing
+  const [animationValue, setAnimationValue] = useState(0);
 
   // Initialize session manager
   useEffect(() => {
@@ -61,6 +64,10 @@ const SessionTest = () => {
     ) => {
       setElapsed(elapsed);
       setRemaining(remaining);
+    };
+
+    manager.onAnimationUpdate = (value: number) => {
+      setAnimationValue(value);
     };
 
     setIsReady(true);
@@ -263,6 +270,31 @@ const SessionTest = () => {
               </View>
             )}
 
+            {/* Breathing Animation Indicator */}
+            {state === "playing" && (
+              <View style={styles.animationSection}>
+                <Text style={styles.animationLabel}>Breathing Guide:</Text>
+                <View style={styles.breathingCircleContainer}>
+                  <View
+                    style={[
+                      styles.breathingCircle,
+                      {
+                        transform: [
+                          {
+                            scale: 0.5 + animationValue * 0.5, // Scale from 0.5 to 1.0
+                          },
+                        ],
+                        opacity: 0.6 + animationValue * 0.4, // Opacity from 0.6 to 1.0
+                      },
+                    ]}
+                  />
+                  <Text style={styles.breathingText}>
+                    {animationValue < 0.5 ? "Breathe In" : "Breathe Out"}
+                  </Text>
+                </View>
+              </View>
+            )}
+
             {/* Master Volume */}
             {state !== "idle" && (
               <View style={styles.section}>
@@ -392,6 +424,37 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 14,
     textAlign: "center",
+  },
+  animationSection: {
+    padding: 20,
+    backgroundColor: "#1a1a1a",
+    borderRadius: 12,
+    marginBottom: 20,
+    alignItems: "center",
+  },
+  animationLabel: {
+    color: "#1EB1FC",
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 15,
+  },
+  breathingCircleContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    height: 150,
+  },
+  breathingCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: "#1EB1FC",
+    position: "absolute",
+  },
+  breathingText: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "600",
+    marginTop: 120,
   },
   sectionTitle: {
     color: "#FFFFFF",

@@ -46,7 +46,7 @@ void MartigliNode::pause() {
     // isPaused will be set when the ramp completes
     _startGain = _isVolumeRamping ? _currentGain : 1.0f; // If not ramping, assume full volume
     _targetGain = 0.0f;
-    _rampDuration = 1.0f; // Increased to 1s for testing
+    _rampDuration = 0.5f;
     _rampElapsed = 0.0f;
     _isVolumeRamping = true;
     std::cout << "MartigliNode::pause() - startGain=" << _startGain << ", targetGain=" << _targetGain << ", duration=" << _rampDuration << "s" << std::endl;
