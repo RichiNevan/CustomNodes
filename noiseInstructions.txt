@@ -1,4 +1,12 @@
 this is the last type of voice, we will tackle it when all the others are working fine.
 it is basically noise, white, brown and pink, that can be toggled, and will have a short volume ramp when toggled on/off.
 
-This can also be handled in js, we will think together if it is worth it writing it in c++.
+Now, there are two use cases for this node: 
+it is possible that the presets will include a voice type "Noise", which will only have a noiseColor parameter.
+in this case, the noise will be treated as any other voice type, and listed in the volume panel.
+this is a new feature, that newer presets will include, but so far these presets have not been written.
+
+this node will most of the time be used as i described at the beginning: the user will be able to toggle noise on/off during the session, as well as changing noise color on the fly.
+the noise will have a small volume ramp (0.3 seconds) when toggled on/off, and a 0.2 seconds ramp when switching from one noise type to the other.
+
+this funcionality might as well all be written on the js side, but for coherency i think it might be easier to keep all voice types together, following the same logic. What do you think about this?

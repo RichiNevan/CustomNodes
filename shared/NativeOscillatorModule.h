@@ -20,6 +20,7 @@ private:
   jsi::Function createMartigliInstaller(jsi::Runtime &runtime);
   jsi::Function createBinauralInstaller(jsi::Runtime &runtime);
   jsi::Function createSymmetryInstaller(jsi::Runtime &runtime);
+  jsi::Function createMartigliBinauralInstaller(jsi::Runtime &runtime);
 };
 
 } // namespace facebook::react

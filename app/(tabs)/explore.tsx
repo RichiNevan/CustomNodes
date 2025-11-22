@@ -10,7 +10,7 @@ import {
 import Slider from "@react-native-community/slider";
 import { Container, Button } from "../components";
 import NativeOscillatorModule from "../../specs/NativeOscillatorModule";
-import { MartigliNode, BinauralNode, SymmetryNode } from "./types";
+import { MartigliNode, BinauralNode, SymmetryNode, MartigliBinauralNode } from "./types";
 import { AudioContext } from "react-native-audio-api";
 
 const MARTIGLI_PRESET = {
@@ -48,11 +48,27 @@ const SYMMETRY_PRESET = {
   iniVolume: null,
 };
 
+const MARTIGLI_BINAURAL_PRESET = {
+  fl: 203,
+  fr: 200,
+  waveformL: 0,
+  waveformR: 0,
+  ma: 140,
+  mp1: 20,
+  md: 600,
+  inhaleDur: 5,
+  exhaleDur: 5,
+  panOsc: 0,
+  panOscPeriod: 300,
+  panOscTrans: 20,
+};
+
 export default function TabTwoScreen() {
   const [isReady, setIsReady] = useState(false);
   const [isPlayingMartigli, setIsPlayingMartigli] = useState(false);
   const [isPlayingBinaural, setIsPlayingBinaural] = useState(false);
   const [isPlayingSymmetry, setIsPlayingSymmetry] = useState(false);
+  const [isPlayingMartigliBinaural, setIsPlayingMartigliBinaural] = useState(false);
   const [animationValue, setAnimationValue] = useState(0);
 
   // Current Martigli durations (for live display)
@@ -68,16 +84,28 @@ export default function TabTwoScreen() {
   const [martigliVolume, setMartigliVolume] = useState(0.3);
   const [binauralVolume, setBinauralVolume] = useState(0.3);
   const [symmetryVolume, setSymmetryVolume] = useState(0.3);
+  const [martigliBinauralVolume, setMartigliBinauralVolume] = useState(0.3);
 
   // Panning test controls
   const [panOscMode, setPanOscMode] = useState(3);
   const [panOscPeriod, setPanOscPeriod] = useState(10);
   const [panOscTrans, setPanOscTrans] = useState(2);
 
+  // MartigliBinaural specific controls
+  const [mbPanOscMode, setMbPanOscMode] = useState(0);
+  const [mbPanOscPeriod, setMbPanOscPeriod] = useState(120);
+  const [mbPanOscTrans, setMbPanOscTrans] = useState(20);
+  const [mbBaseInhaleDur, setMbBaseInhaleDur] = useState(MARTIGLI_BINAURAL_PRESET.inhaleDur);
+  const [mbBaseExhaleDur, setMbBaseExhaleDur] = useState(MARTIGLI_BINAURAL_PRESET.exhaleDur);
+  const [mbTargetPeriod, setMbTargetPeriod] = useState(MARTIGLI_BINAURAL_PRESET.mp1);
+  const [mbCurrentInhaleDur, setMbCurrentInhaleDur] = useState(0);
+  const [mbCurrentExhaleDur, setMbCurrentExhaleDur] = useState(0);
+
   const audioContext = useRef<AudioContext | null>(null);
   const martigliNode = useRef<MartigliNode | null>(null);
   const binauralNode = useRef<BinauralNode | null>(null);
   const symmetryNode = useRef<SymmetryNode | null>(null);
+  const martigliBinauralNode = useRef<MartigliBinauralNode | null>(null);
   const animationInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -262,6 +290,61 @@ export default function TabTwoScreen() {
 
       symmetryNode.current = node;
       setIsPlayingSymmetry(true);
+    }
+  };
+
+  const toggleMartigliBinaural = async () => {
+    if (!audioContext.current) return;
+
+    if (isPlayingMartigliBinaural) {
+      martigliBinauralNode.current?.stop();
+      // Wait for fade-out before disconnecting
+      setTimeout(() => {
+        martigliBinauralNode.current?.disconnect();
+        martigliBinauralNode.current = null;
+      }, 1000);
+      setIsPlayingMartigliBinaural(false);
+    } else {
+      if (!isPlayingMartigli && !isPlayingBinaural && !isPlayingSymmetry && !isPlayingMartigliBinaural) {
+        await audioContext.current.resume();
+      }
+
+      console.log("Creating MartigliBinauralNode...");
+      const rawNode = global.createMartigliBinauralNode(audioContext.current.context);
+      const node = new MartigliBinauralNode(audioContext.current, rawNode);
+
+      Object.assign(node, MARTIGLI_BINAURAL_PRESET, {
+        mp0: mbBaseInhaleDur + mbBaseExhaleDur,
+        inhaleDur: mbBaseInhaleDur,
+        exhaleDur: mbBaseExhaleDur,
+        volume: martigliBinauralVolume,
+        panOsc: mbPanOscMode,
+        panOscPeriod: mbPanOscPeriod,
+        panOscTrans: mbPanOscTrans,
+      });
+
+      console.log("MartigliBinaural params - fl:", node.fl, "fr:", node.fr, "ma:", node.ma);
+      
+      node.connect(audioContext.current.destination);
+      node.start();
+      
+      // Set as active for animation registry
+      node.isOn = true;
+
+      martigliBinauralNode.current = node;
+
+      // Start animation polling
+      if (!animationInterval.current) {
+        animationInterval.current = setInterval(() => {
+          if (martigliBinauralNode.current) {
+            setAnimationValue(martigliBinauralNode.current.animationValue || 0);
+            setMbCurrentInhaleDur(martigliBinauralNode.current.currentInhaleDur);
+            setMbCurrentExhaleDur(martigliBinauralNode.current.currentExhaleDur);
+          }
+        }, 16);
+      }
+
+      setIsPlayingMartigliBinaural(true);
     }
   };
 
@@ -599,6 +682,225 @@ export default function TabTwoScreen() {
                       SYMMETRY_PRESET.permfunc
                     ]
                   }
+                </Text>
+              </View>
+            </>
+          )}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.subtitle}>🫁🎧 Martigli Binaural (Hybrid)</Text>
+          <Text style={styles.subtext}>
+            Combines breathing LFO with dual binaural carriers
+          </Text>
+
+          <View style={styles.sliderContainer}>
+            <Text style={styles.label}>
+              Volume: {(martigliBinauralVolume * 100).toFixed(0)}%
+            </Text>
+            <Slider
+              style={styles.slider}
+              minimumValue={0}
+              maximumValue={1}
+              value={martigliBinauralVolume}
+              onValueChange={(val) => {
+                setMartigliBinauralVolume(val);
+                if (martigliBinauralNode.current) martigliBinauralNode.current.volume = val;
+              }}
+              minimumTrackTintColor="#1EB1FC"
+              maximumTrackTintColor="#8B8B8B"
+              thumbTintColor="#1EB1FC"
+              disabled={!isReady}
+            />
+          </View>
+
+          {!isPlayingMartigliBinaural && (
+            <>
+              <View style={styles.controlGroup}>
+                <Text style={styles.label}>Panning Mode:</Text>
+                <View style={styles.buttonRow}>
+                  {["None", "Ping-Pong", "Sine", "Martigli"].map(
+                    (label, idx) => (
+                      <TouchableOpacity
+                        key={idx}
+                        onPress={() => setMbPanOscMode(idx)}
+                        style={[
+                          styles.modeButton,
+                          mbPanOscMode === idx && styles.activeButton,
+                        ]}
+                      >
+                        <Text style={styles.buttonText}>{label}</Text>
+                      </TouchableOpacity>
+                    )
+                  )}
+                </View>
+              </View>
+
+              {(mbPanOscMode === 1 || mbPanOscMode === 2) && (
+                <View style={styles.sliderContainer}>
+                  <Text style={styles.label}>Period: {mbPanOscPeriod}s</Text>
+                  <Slider
+                    style={styles.slider}
+                    minimumValue={5}
+                    maximumValue={180}
+                    step={5}
+                    value={mbPanOscPeriod}
+                    onValueChange={setMbPanOscPeriod}
+                    minimumTrackTintColor="#1EB1FC"
+                    maximumTrackTintColor="#8B8B8B"
+                    thumbTintColor="#1EB1FC"
+                  />
+                </View>
+              )}
+
+              {mbPanOscMode === 1 && (
+                <View style={styles.sliderContainer}>
+                  <Text style={styles.label}>Transition: {mbPanOscTrans}s</Text>
+                  <Slider
+                    style={styles.slider}
+                    minimumValue={1}
+                    maximumValue={30}
+                    step={1}
+                    value={mbPanOscTrans}
+                    onValueChange={setMbPanOscTrans}
+                    minimumTrackTintColor="#1EB1FC"
+                    maximumTrackTintColor="#8B8B8B"
+                    thumbTintColor="#1EB1FC"
+                  />
+                </View>
+              )}
+            </>
+          )}
+
+          <Button
+            title={isPlayingMartigliBinaural ? "Stop Hybrid" : "Start Hybrid"}
+            onPress={toggleMartigliBinaural}
+            disabled={!isReady}
+          />
+
+          {isPlayingMartigliBinaural && (
+            <>
+              <Button
+                title={martigliBinauralNode.current?.isPaused ? "Resume" : "Pause"}
+                onPress={() =>
+                  martigliBinauralNode.current?.isPaused
+                    ? martigliBinauralNode.current?.resume()
+                    : martigliBinauralNode.current?.pause()
+                }
+              />
+
+              <View style={styles.box}>
+                <Text style={styles.label}>
+                  Breathing: {(animationValue * 100).toFixed(0)}%
+                </Text>
+                <View style={styles.bar}>
+                  <View
+                    style={[styles.fill, { width: `${animationValue * 100}%` }]}
+                  />
+                </View>
+              </View>
+
+              <View style={styles.box}>
+                <Text style={styles.label}>Breathing Rhythm Control</Text>
+                <Text style={styles.text}>
+                  Current Period:{" "}
+                  {(mbCurrentInhaleDur + mbCurrentExhaleDur).toFixed(1)}s
+                </Text>
+                <Text style={styles.subtext}>
+                  Inhale: {mbCurrentInhaleDur.toFixed(1)}s | Exhale:{" "}
+                  {mbCurrentExhaleDur.toFixed(1)}s
+                </Text>
+                <Text style={styles.subtext}>
+                  Base: {mbBaseInhaleDur.toFixed(1)}s in /{" "}
+                  {mbBaseExhaleDur.toFixed(1)}s out
+                </Text>
+                <Text style={styles.subtext}>
+                  Target: {mbTargetPeriod.toFixed(1)}s over{" "}
+                  {(MARTIGLI_BINAURAL_PRESET.md / 60).toFixed(0)} min
+                </Text>
+
+                <View style={styles.buttonRow}>
+                  <TouchableOpacity
+                    style={[
+                      styles.adjustButton,
+                      (mbBaseInhaleDur < 2 || mbBaseExhaleDur < 2) && styles.disabledButton
+                    ]}
+                    disabled={mbBaseInhaleDur < 2 || mbBaseExhaleDur < 2}
+                    onPress={() => {
+                      const factor = 0.9;
+                      const newInhale = Math.max(1, mbBaseInhaleDur * factor);
+                      const newExhale = Math.max(1, mbBaseExhaleDur * factor);
+                      const newMp0 = newInhale + newExhale;
+                      const newMp1 =
+                        newMp0 *
+                        (mbTargetPeriod / (mbBaseInhaleDur + mbBaseExhaleDur));
+
+                      setMbBaseInhaleDur(newInhale);
+                      setMbBaseExhaleDur(newExhale);
+                      setMbTargetPeriod(newMp1);
+
+                      if (martigliBinauralNode.current) {
+                        Object.assign(martigliBinauralNode.current, {
+                          inhaleDur: newInhale,
+                          exhaleDur: newExhale,
+                          mp0: newMp0,
+                          mp1: newMp1,
+                        });
+                      }
+                    }}
+                  >
+                    <Text style={styles.adjustButtonText}>− 10%</Text>
+                    <Text style={styles.adjustButtonLabel}>SLOWER</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.adjustButton,
+                      (mbBaseInhaleDur > 15 || mbBaseExhaleDur > 15) && styles.disabledButton
+                    ]}
+                    disabled={mbBaseInhaleDur > 15 || mbBaseExhaleDur > 15}
+                    onPress={() => {
+                      const factor = 1.1;
+                      const newInhale = Math.min(20, mbBaseInhaleDur * factor);
+                      const newExhale = Math.min(30, mbBaseExhaleDur * factor);
+                      const newMp0 = newInhale + newExhale;
+                      const newMp1 =
+                        newMp0 *
+                        (mbTargetPeriod / (mbBaseInhaleDur + mbBaseExhaleDur));
+
+                      setMbBaseInhaleDur(newInhale);
+                      setMbBaseExhaleDur(newExhale);
+                      setMbTargetPeriod(newMp1);
+
+                      if (martigliBinauralNode.current) {
+                        Object.assign(martigliBinauralNode.current, {
+                          inhaleDur: newInhale,
+                          exhaleDur: newExhale,
+                          mp0: newMp0,
+                          mp1: newMp1,
+                        });
+                      }
+                    }}
+                  >
+                    <Text style={styles.adjustButtonText}>+ 10%</Text>
+                    <Text style={styles.adjustButtonLabel}>FASTER</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <View style={styles.box}>
+                <Text style={styles.label}>Carrier Frequencies</Text>
+                <Text style={styles.text}>
+                  {MARTIGLI_BINAURAL_PRESET.fl}Hz (L) • {MARTIGLI_BINAURAL_PRESET.fr}Hz (R)
+                </Text>
+                <Text style={styles.text}>
+                  Beat Frequency: {Math.abs(MARTIGLI_BINAURAL_PRESET.fl - MARTIGLI_BINAURAL_PRESET.fr)}Hz
+                </Text>
+                <Text style={styles.text}>
+                  Modulation: ±{MARTIGLI_BINAURAL_PRESET.ma}Hz
+                </Text>
+                <Text style={styles.subtext}>
+                  Panning: {["None", "Ping-Pong", "Sine", "Martigli LFO"][mbPanOscMode]}
                 </Text>
               </View>
             </>

@@ -152,3 +152,10 @@ we need to think of a similar js interface that efficiently can do the same job.
 Keep in mind that there needs to be a way to change the various voice's parameters while they are running. 
 The final idea (we will not do this now) will be to have an ai agent, to whom the user will describe how he/she feels, and this will modify the parameters accordingly.
 
+It is an interface that allows js code to easily use the audio nodes. 
+The app allows the user to choose a session from a list of sessions, like Migrain, Anxiety, ecc.. and this session (a preset that include an array of voices) will be loaded in the interface.
+
+the user will then only need to press play and hear the sounds.
+
+The interface will also allow easy access to the various values that are needed for animations (first of all, the martigli value that drives the main animation).
+Also, the interface will allow to change some parameters while the session is running (like the volume of the various voices, the martigli inhale/exale duration via the + and - buttons, ecc... Ideally, we should also be able to modify the frequency of binaural voices in real time.)

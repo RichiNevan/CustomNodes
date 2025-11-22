@@ -67,6 +67,33 @@ export interface ISymmetryNode extends IAudioNode {
   frameCount: number;
 }
 
+export interface IMartigliBinauralNode extends IAudioNode {
+  fl: number;
+  fr: number;
+  waveformL: number;
+  waveformR: number;
+  ma: number;
+  mp0: number;
+  mp1: number;
+  md: number;
+  inhaleDur: number;
+  exhaleDur: number;
+  volume: number;
+  panOsc: number;
+  panOscPeriod: number;
+  panOscTrans: number;
+  isOn: boolean;
+  isPaused: boolean;
+  animationValue: number;
+  currentInhaleDur: number;
+  currentExhaleDur: number;
+  currentPeriod: number;
+  shouldStart: boolean;
+  shouldPause: boolean;
+  shouldResume: boolean;
+  shouldStop: boolean;
+}
+
 // Helper to create property accessors
 const createProp = (node: IAudioNode, name: string) => ({
   get: () => (node as any)[name],
@@ -352,9 +379,138 @@ export class SymmetryNode extends AudioNode {
   }
 }
 
+export class MartigliBinauralNode extends AudioNode {
+  private n: IMartigliBinauralNode;
+
+  constructor(context: BaseAudioContext, node: IMartigliBinauralNode) {
+    super(context, node);
+    this.n = node;
+  }
+
+  get fl() {
+    return this.n.fl;
+  }
+  set fl(v: number) {
+    this.n.fl = v;
+  }
+  get fr() {
+    return this.n.fr;
+  }
+  set fr(v: number) {
+    this.n.fr = v;
+  }
+  get waveformL() {
+    return this.n.waveformL;
+  }
+  set waveformL(v: number) {
+    this.n.waveformL = v;
+  }
+  get waveformR() {
+    return this.n.waveformR;
+  }
+  set waveformR(v: number) {
+    this.n.waveformR = v;
+  }
+  get ma() {
+    return this.n.ma;
+  }
+  set ma(v: number) {
+    this.n.ma = v;
+  }
+  get mp0() {
+    return this.n.mp0;
+  }
+  set mp0(v: number) {
+    this.n.mp0 = v;
+  }
+  get mp1() {
+    return this.n.mp1;
+  }
+  set mp1(v: number) {
+    this.n.mp1 = v;
+  }
+  get md() {
+    return this.n.md;
+  }
+  set md(v: number) {
+    this.n.md = v;
+  }
+  get inhaleDur() {
+    return this.n.inhaleDur;
+  }
+  set inhaleDur(v: number) {
+    this.n.inhaleDur = v;
+  }
+  get exhaleDur() {
+    return this.n.exhaleDur;
+  }
+  set exhaleDur(v: number) {
+    this.n.exhaleDur = v;
+  }
+  get volume() {
+    return this.n.volume;
+  }
+  set volume(v: number) {
+    this.n.volume = v;
+  }
+  get panOsc() {
+    return this.n.panOsc;
+  }
+  set panOsc(v: number) {
+    this.n.panOsc = v;
+  }
+  get panOscPeriod() {
+    return this.n.panOscPeriod;
+  }
+  set panOscPeriod(v: number) {
+    this.n.panOscPeriod = v;
+  }
+  get panOscTrans() {
+    return this.n.panOscTrans;
+  }
+  set panOscTrans(v: number) {
+    this.n.panOscTrans = v;
+  }
+  get isOn() {
+    return this.n.isOn;
+  }
+  set isOn(v: boolean) {
+    this.n.isOn = v;
+  }
+  get isPaused() {
+    return this.n.isPaused;
+  }
+  get animationValue() {
+    return this.n.animationValue;
+  }
+  get currentInhaleDur() {
+    return this.n.currentInhaleDur;
+  }
+  get currentExhaleDur() {
+    return this.n.currentExhaleDur;
+  }
+  get currentPeriod() {
+    return this.n.currentPeriod;
+  }
+
+  start() {
+    this.n.shouldStart = true;
+  }
+  pause() {
+    this.n.shouldPause = true;
+  }
+  resume() {
+    this.n.shouldResume = true;
+  }
+  stop() {
+    this.n.shouldStop = true;
+  }
+}
+
 declare global {
   var createMyOscillatorNode: (context: IBaseAudioContext) => IMyOscillatorNode;
   var createMartigliNode: (context: IBaseAudioContext) => IMartigliNode;
   var createBinauralNode: (context: IBaseAudioContext) => IBinauralNode;
   var createSymmetryNode: (context: IBaseAudioContext) => ISymmetryNode;
+  var createMartigliBinauralNode: (context: IBaseAudioContext) => IMartigliBinauralNode;
 }

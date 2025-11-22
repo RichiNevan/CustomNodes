@@ -132,7 +132,7 @@ void MartigliNode::processNode(const std::shared_ptr<AudioBus> &bus, int framesT
         
         float carrier = 0.0f;
         switch (waveformM) {
-            case 1: carrier = 4.0f * fabsf(fmod(_carrierPhase / (2.0f * M_PI) + 0.75f, 1.0f) - 0.5f) - 1.0f; break;
+            case 1: carrier = 4.0f * fabsf(fmodf(_carrierPhase / (2.0f * M_PI) + 0.75f, 1.0f) - 0.5f) - 1.0f; break;
             case 2: carrier = (_carrierPhase < M_PI) ? 1.0f : -1.0f; break;
             case 3: carrier = 2.0f * (_carrierPhase / (2.0f * M_PI)) - 1.0f; break;
             default: carrier = sinf(_carrierPhase);
