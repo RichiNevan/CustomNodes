@@ -1,0 +1,14 @@
+you understand that these files will be copied and pasted in another repository.
+the audio logic needs to fit inside the already present interface.
+
+I think it will without problems, but it needs to be done correctly.
+Please write some instructions on how to effectively use this audio engine.
+. How to initialize the sessionManager, and have it working throughout the various tabs or screens. 
+
+. How the session manager works, and how to pull the right values out of it.
+
+. how to successfully integrate + and - buttons, showing the current cycle and the target cycle, that update correctly.
+
+
+Write a developer manual on how to use all this effectively. It does not need to be too long, be simple and essential, but cover everything you think is needed.
+

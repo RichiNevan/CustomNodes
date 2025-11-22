@@ -2,7 +2,6 @@
 #include <audioapi/utils/AudioBus.h>
 #include <audioapi/utils/AudioArray.h>
 #include <cmath>
-#include <iostream>
 
 namespace audioapi {
 
@@ -39,22 +38,17 @@ void MartigliBinauralNode::start() {
 }
 
 void MartigliBinauralNode::pause() {
-    // Don't set isPaused yet - let the audio ramp down first
-    _startGain = _isVolumeRamping ? _currentGain : 1.0f; // If not ramping, assume full volume
+    _startGain = _isVolumeRamping ? _currentGain : 1.0f;
     _targetGain = 0.0f;
     _rampDuration = 0.5f;
     _rampElapsed = 0.0f;
     _isVolumeRamping = true;
-    std::cout << "MartigliBinauralNode::pause() - startGain=" << _startGain << ", targetGain=" << _targetGain << ", duration=" << _rampDuration << "s" << std::endl;
 }
 
 void MartigliBinauralNode::resume() {
     isPaused = false;
-    
-    // Reset LFO phase to start from trough BEFORE fading in
     _lfoPhaseTime = 0.0f;
     _lastPhase = 0.0f;
-    
     _startGain = _isVolumeRamping ? _currentGain : 0.0f;
     _targetGain = 1.0f;
     _rampDuration = 0.5f;
@@ -63,10 +57,8 @@ void MartigliBinauralNode::resume() {
 }
 
 void MartigliBinauralNode::resetPhase() {
-    // Reset LFO phase to start from trough
     _lfoPhaseTime = 0.0f;
     _lastPhase = 0.0f;
-    std::cout << "MartigliBinauralNode: Phase reset to trough" << std::endl;
 }
 
 void MartigliBinauralNode::stop() {
@@ -111,13 +103,10 @@ void MartigliBinauralNode::processNode(const std::shared_ptr<AudioBus> &bus, int
             if (t >= 1.0f) {
                 _currentGain = _targetGain;
                 _isVolumeRamping = false;
-                // If we just finished ramping to 0, set isPaused
                 if (_targetGain == 0.0f) {
                     isPaused = true;
-                    std::cout << "MartigliBinauralNode: Pause ramp complete, now frozen" << std::endl;
                 }
             } else {
-                // Linear interpolation from start to target
                 _currentGain = _startGain + (_targetGain - _startGain) * t;
             }
         }

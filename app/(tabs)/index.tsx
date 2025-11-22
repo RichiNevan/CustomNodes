@@ -41,6 +41,9 @@ const SessionTest = () => {
   
   // Animation value from Martigli breathing
   const [animationValue, setAnimationValue] = useState(0);
+  
+  // Breathing parameters (for first Martigli voice)
+  const [breathingParams, setBreathingParams] = useState<any>(null);
 
   // Initialize session manager
   useEffect(() => {
@@ -136,6 +139,48 @@ const SessionTest = () => {
       setVoices(sessionManager.current.getVoices());
     }
   };
+
+  const handleVoiceVolumeSliding = (index: number, value: number) => {
+    // Update visual state immediately without updating the audio
+    setVoices(prev => prev.map((v, i) => i === index ? {...v, volume: value} : v));
+  };
+
+  const handleBreathingAdjust = (direction: 'increase' | 'decrease') => {
+    if (!sessionManager.current) return;
+    
+    // Find first Martigli-type voice
+    const martigliIndex = voices.findIndex(v => 
+      v.type === 'Martigli' || v.type === 'MartigliBinaural'
+    );
+    
+    if (martigliIndex >= 0) {
+      sessionManager.current.adjustBreathingPace(martigliIndex, direction);
+      // Force update of breathing params
+      const params = sessionManager.current.getBreathingParams(martigliIndex);
+      setBreathingParams(params);
+    }
+  };
+
+  const updateBreathingParams = () => {
+    if (!sessionManager.current) return;
+    
+    const martigliIndex = voices.findIndex(v => 
+      v.type === 'Martigli' || v.type === 'MartigliBinaural'
+    );
+    
+    if (martigliIndex >= 0) {
+      const params = sessionManager.current.getBreathingParams(martigliIndex);
+      setBreathingParams(params);
+    }
+  };
+
+  // Update breathing params periodically when playing
+  useEffect(() => {
+    if (state === 'playing') {
+      const interval = setInterval(updateBreathingParams, 100);
+      return () => clearInterval(interval);
+    }
+  }, [state, voices]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -295,6 +340,44 @@ const SessionTest = () => {
               </View>
             )}
 
+            {/* Breathing Pace Control */}
+            {state === "playing" && breathingParams && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Breathing Pace:</Text>
+                <View style={styles.breathingParamsContainer}>
+                  <View style={styles.paceButtonRow}>
+                    <Pressable
+                      style={styles.paceButton}
+                      onPress={() => handleBreathingAdjust('decrease')}
+                    >
+                      <Text style={styles.paceButtonText}>- Slower</Text>
+                    </Pressable>
+                    <Pressable
+                      style={styles.paceButton}
+                      onPress={() => handleBreathingAdjust('increase')}
+                    >
+                      <Text style={styles.paceButtonText}>+ Faster</Text>
+                    </Pressable>
+                  </View>
+                  
+                  <View style={styles.cycleInfoContainer}>
+                    <View style={styles.cycleInfoRow}>
+                      <Text style={styles.cycleLabel}>Current Cycle:</Text>
+                      <Text style={styles.cycleValue}>
+                        {breathingParams.currentPeriod.toFixed(2)}s
+                      </Text>
+                    </View>
+                    <View style={styles.cycleInfoRow}>
+                      <Text style={styles.cycleLabel}>Target Cycle:</Text>
+                      <Text style={styles.cycleValue}>
+                        {breathingParams.targetPeriod.toFixed(2)}s
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              </View>
+            )}
+
             {/* Master Volume */}
             {state !== "idle" && (
               <View style={styles.section}>
@@ -306,7 +389,8 @@ const SessionTest = () => {
                   minimumValue={0}
                   maximumValue={0.6}
                   value={masterVolume}
-                  onValueChange={handleMasterVolumeChange}
+                  onValueChange={setMasterVolume}
+                  onSlidingComplete={handleMasterVolumeChange}
                   minimumTrackTintColor="#1EB1FC"
                   maximumTrackTintColor="#8B8B8B"
                   thumbTintColor="#1EB1FC"
@@ -330,6 +414,9 @@ const SessionTest = () => {
                       maximumValue={0.4}
                       value={voice.volume}
                       onValueChange={(value) =>
+                        handleVoiceVolumeSliding(index, value)
+                      }
+                      onSlidingComplete={(value) =>
                         handleVoiceVolumeChange(index, value)
                       }
                       minimumTrackTintColor="#1EB1FC"
@@ -472,6 +559,46 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 14,
     marginBottom: 8,
+  },
+  breathingParamsContainer: {
+    marginBottom: 20,
+    padding: 15,
+    backgroundColor: "#222",
+    borderRadius: 8,
+  },
+  paceButtonRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 15,
+  },
+  paceButton: {
+    flex: 1,
+    backgroundColor: "#1EB1FC",
+    padding: 15,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  paceButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  cycleInfoContainer: {
+    gap: 8,
+  },
+  cycleInfoRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  cycleLabel: {
+    color: "#FFFFFF",
+    fontSize: 14,
+  },
+  cycleValue: {
+    color: "#1EB1FC",
+    fontSize: 16,
+    fontWeight: "700",
   },
   slider: {
     width: "100%",

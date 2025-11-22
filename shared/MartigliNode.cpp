@@ -43,24 +43,18 @@ void MartigliNode::start() {
 
 void MartigliNode::pause() {
     // Don't set isPaused yet - let the audio ramp down first
-    // isPaused will be set when the ramp completes
-    _startGain = _isVolumeRamping ? _currentGain : 1.0f; // If not ramping, assume full volume
+    _startGain = _isVolumeRamping ? _currentGain : 1.0f;
     _targetGain = 0.0f;
     _rampDuration = 0.5f;
     _rampElapsed = 0.0f;
     _isVolumeRamping = true;
-    std::cout << "MartigliNode::pause() - startGain=" << _startGain << ", targetGain=" << _targetGain << ", duration=" << _rampDuration << "s" << std::endl;
 }
 
 void MartigliNode::resume() {
     isPaused = false;
-    
-    // Reset LFO phase to start from trough BEFORE fading in
     _lfoPhaseTime = 0.0f;
     _lastPhase = 0.0f;
-    
-    // Quick fade back to full volume
-    _startGain = _isVolumeRamping ? _currentGain : 0.0f; // Should be at 0 from pause
+    _startGain = _isVolumeRamping ? _currentGain : 0.0f;
     _targetGain = 1.0f;
     _rampDuration = 0.5f;
     _rampElapsed = 0.0f;
@@ -68,10 +62,8 @@ void MartigliNode::resume() {
 }
 
 void MartigliNode::resetPhase() {
-    // Reset LFO phase to start from trough
     _lfoPhaseTime = 0.0f;
     _lastPhase = 0.0f;
-    std::cout << "MartigliNode: Phase reset to trough" << std::endl;
 }
 
 void MartigliNode::stop() {
@@ -117,12 +109,7 @@ void MartigliNode::processNode(const std::shared_ptr<AudioBus> &bus, int framesT
             if (t >= 1.0f) {
                 _currentGain = _targetGain;
                 _isVolumeRamping = false;
-                // If we just finished ramping to 0, set isPaused
-                if (_targetGain == 0.0f) {
-                    isPaused = true;
-                    std::cout << "MartigliNode: Pause ramp complete, now frozen" << std::endl;
-                }
-                std::cout << "MartigliNode: Ramp complete, currentGain=" << _currentGain << std::endl;
+                if (_targetGain == 0.0f) isPaused = true;
             } else {
                 // Linear interpolation from start to target
                 _currentGain = _startGain + (_targetGain - _startGain) * t;
@@ -190,14 +177,12 @@ void MartigliNode::processNode(const std::shared_ptr<AudioBus> &bus, int framesT
         if (numChannels >= 1) bus->getChannel(0)->getData()[i] = carrier * leftGain;
         if (numChannels >= 2) bus->getChannel(1)->getData()[i] = carrier * rightGain;
         
-        // Advance phases (but not when paused)
         if (!isPaused) {
             _lfoPhaseTime += dt;
             _carrierPhase += 2.0f * M_PI * carrierFreq * dt;
             if (_carrierPhase >= 2.0f * M_PI) _carrierPhase -= 2.0f * M_PI;
             if (_isRamping) _rampElapsedTime += dt;
         }
-        // Note: volume ramping (_rampElapsed) is updated at the start of the loop, independent of isPaused
     }
 }
 
