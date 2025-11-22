@@ -6,6 +6,7 @@
 #include <cmath>
 #include <algorithm>
 #include <cstdio>
+#include <iostream>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -49,12 +50,11 @@ void BinauralNode::processNode(
     isRamping_ = true;
   }
   if (shouldPause) {
-    isPaused = true;
     shouldPause = false;
-    // Quick fade to silence
+    // Don't set isPaused yet - let the audio ramp down first
     startGain_ = isRamping_ ? currentGain_ : 1.0f; // If not ramping, assume full volume
     targetGain_ = 0.0f;
-    rampDuration_ = 0.5f;
+    rampDuration_ = 1.0f; // Increased to 1s for testing
     rampElapsed_ = 0.0f;
     isRamping_ = true;
   }
@@ -92,7 +92,12 @@ void BinauralNode::processNode(
       if (t >= 1.0f) {
         currentGain_ = targetGain_;
         isRamping_ = false;
-        // If we finished fading out, stop the node
+        // If we just finished ramping to 0, set isPaused
+        if (targetGain_ == 0.0f) {
+          isPaused = true;
+          std::cout << "BinauralNode: Pause ramp complete, now frozen" << std::endl;
+        }
+        // If we finished fading out completely, stop the node
         if (targetGain_ == 0.0f && !isPaused) {
           isRunning_ = false;
         }

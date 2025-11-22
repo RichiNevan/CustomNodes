@@ -42,13 +42,14 @@ void MartigliNode::start() {
 }
 
 void MartigliNode::pause() {
-    isPaused = true;
-    // Quick fade to silence - capture current gain before it changes
+    // Don't set isPaused yet - let the audio ramp down first
+    // isPaused will be set when the ramp completes
     _startGain = _isVolumeRamping ? _currentGain : 1.0f; // If not ramping, assume full volume
     _targetGain = 0.0f;
-    _rampDuration = 0.5f;
+    _rampDuration = 1.0f; // Increased to 1s for testing
     _rampElapsed = 0.0f;
     _isVolumeRamping = true;
+    std::cout << "MartigliNode::pause() - startGain=" << _startGain << ", targetGain=" << _targetGain << ", duration=" << _rampDuration << "s" << std::endl;
 }
 
 void MartigliNode::resume() {
@@ -116,6 +117,12 @@ void MartigliNode::processNode(const std::shared_ptr<AudioBus> &bus, int framesT
             if (t >= 1.0f) {
                 _currentGain = _targetGain;
                 _isVolumeRamping = false;
+                // If we just finished ramping to 0, set isPaused
+                if (_targetGain == 0.0f) {
+                    isPaused = true;
+                    std::cout << "MartigliNode: Pause ramp complete, now frozen" << std::endl;
+                }
+                std::cout << "MartigliNode: Ramp complete, currentGain=" << _currentGain << std::endl;
             } else {
                 // Linear interpolation from start to target
                 _currentGain = _startGain + (_targetGain - _startGain) * t;
@@ -183,13 +190,14 @@ void MartigliNode::processNode(const std::shared_ptr<AudioBus> &bus, int framesT
         if (numChannels >= 1) bus->getChannel(0)->getData()[i] = carrier * leftGain;
         if (numChannels >= 2) bus->getChannel(1)->getData()[i] = carrier * rightGain;
         
-        // Advance phases
+        // Advance phases (but not when paused)
         if (!isPaused) {
             _lfoPhaseTime += dt;
             _carrierPhase += 2.0f * M_PI * carrierFreq * dt;
             if (_carrierPhase >= 2.0f * M_PI) _carrierPhase -= 2.0f * M_PI;
             if (_isRamping) _rampElapsedTime += dt;
         }
+        // Note: volume ramping (_rampElapsed) is updated at the start of the loop, independent of isPaused
     }
 }
 

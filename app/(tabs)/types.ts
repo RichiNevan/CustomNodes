@@ -512,5 +512,7 @@ declare global {
   var createMartigliNode: (context: IBaseAudioContext) => IMartigliNode;
   var createBinauralNode: (context: IBaseAudioContext) => IBinauralNode;
   var createSymmetryNode: (context: IBaseAudioContext) => ISymmetryNode;
-  var createMartigliBinauralNode: (context: IBaseAudioContext) => IMartigliBinauralNode;
+  var createMartigliBinauralNode: (
+    context: IBaseAudioContext
+  ) => IMartigliBinauralNode;
 }

@@ -8,7 +8,7 @@
 
 const PRESETS = {
   // ========== RELAXATION & MEDITATION ==========
-  
+
   Meditazione: {
     _id: "Meditazione",
     header: {

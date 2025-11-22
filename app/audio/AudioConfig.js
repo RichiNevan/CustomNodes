@@ -32,4 +32,3 @@ export function getDefaultVolume(voiceType, iniVolume = null) {
   }
   return DEFAULT_VOLUMES[voiceType] ?? 0.25;
 }
-

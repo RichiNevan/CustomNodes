@@ -77,7 +77,7 @@ void SymmetryNode::processNode(const std::shared_ptr<AudioBus> &bus, int framesT
     _rampState = RampState::RAMPING_DOWN;
     _targetGain = 0.0f;
     _rampProgress = 0.0f;
-    _rampDuration = 0.5f; // Fixed 0.5 seconds for pause
+    _rampDuration = 1.0f; // Increased to 1s for testing
   }
   
   if (shouldResume) {

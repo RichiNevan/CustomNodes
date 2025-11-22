@@ -39,13 +39,13 @@ void MartigliBinauralNode::start() {
 }
 
 void MartigliBinauralNode::pause() {
-    isPaused = true;
-    // Capture current gain before it changes
+    // Don't set isPaused yet - let the audio ramp down first
     _startGain = _isVolumeRamping ? _currentGain : 1.0f; // If not ramping, assume full volume
     _targetGain = 0.0f;
-    _rampDuration = 0.5f;
+    _rampDuration = 1.0f; // Increased to 1s for testing
     _rampElapsed = 0.0f;
     _isVolumeRamping = true;
+    std::cout << "MartigliBinauralNode::pause() - startGain=" << _startGain << ", targetGain=" << _targetGain << ", duration=" << _rampDuration << "s" << std::endl;
 }
 
 void MartigliBinauralNode::resume() {
@@ -111,6 +111,11 @@ void MartigliBinauralNode::processNode(const std::shared_ptr<AudioBus> &bus, int
             if (t >= 1.0f) {
                 _currentGain = _targetGain;
                 _isVolumeRamping = false;
+                // If we just finished ramping to 0, set isPaused
+                if (_targetGain == 0.0f) {
+                    isPaused = true;
+                    std::cout << "MartigliBinauralNode: Pause ramp complete, now frozen" << std::endl;
+                }
             } else {
                 // Linear interpolation from start to target
                 _currentGain = _startGain + (_targetGain - _startGain) * t;

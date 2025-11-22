@@ -10,7 +10,12 @@ import {
 import Slider from "@react-native-community/slider";
 import { Container, Button } from "../components";
 import NativeOscillatorModule from "../../specs/NativeOscillatorModule";
-import { MartigliNode, BinauralNode, SymmetryNode, MartigliBinauralNode } from "./types";
+import {
+  MartigliNode,
+  BinauralNode,
+  SymmetryNode,
+  MartigliBinauralNode,
+} from "./types";
 import { AudioContext } from "react-native-audio-api";
 
 const MARTIGLI_PRESET = {
@@ -68,7 +73,8 @@ export default function TabTwoScreen() {
   const [isPlayingMartigli, setIsPlayingMartigli] = useState(false);
   const [isPlayingBinaural, setIsPlayingBinaural] = useState(false);
   const [isPlayingSymmetry, setIsPlayingSymmetry] = useState(false);
-  const [isPlayingMartigliBinaural, setIsPlayingMartigliBinaural] = useState(false);
+  const [isPlayingMartigliBinaural, setIsPlayingMartigliBinaural] =
+    useState(false);
   const [animationValue, setAnimationValue] = useState(0);
 
   // Current Martigli durations (for live display)
@@ -95,9 +101,15 @@ export default function TabTwoScreen() {
   const [mbPanOscMode, setMbPanOscMode] = useState(0);
   const [mbPanOscPeriod, setMbPanOscPeriod] = useState(120);
   const [mbPanOscTrans, setMbPanOscTrans] = useState(20);
-  const [mbBaseInhaleDur, setMbBaseInhaleDur] = useState(MARTIGLI_BINAURAL_PRESET.inhaleDur);
-  const [mbBaseExhaleDur, setMbBaseExhaleDur] = useState(MARTIGLI_BINAURAL_PRESET.exhaleDur);
-  const [mbTargetPeriod, setMbTargetPeriod] = useState(MARTIGLI_BINAURAL_PRESET.mp1);
+  const [mbBaseInhaleDur, setMbBaseInhaleDur] = useState(
+    MARTIGLI_BINAURAL_PRESET.inhaleDur
+  );
+  const [mbBaseExhaleDur, setMbBaseExhaleDur] = useState(
+    MARTIGLI_BINAURAL_PRESET.exhaleDur
+  );
+  const [mbTargetPeriod, setMbTargetPeriod] = useState(
+    MARTIGLI_BINAURAL_PRESET.mp1
+  );
   const [mbCurrentInhaleDur, setMbCurrentInhaleDur] = useState(0);
   const [mbCurrentExhaleDur, setMbCurrentExhaleDur] = useState(0);
 
@@ -305,12 +317,19 @@ export default function TabTwoScreen() {
       }, 1000);
       setIsPlayingMartigliBinaural(false);
     } else {
-      if (!isPlayingMartigli && !isPlayingBinaural && !isPlayingSymmetry && !isPlayingMartigliBinaural) {
+      if (
+        !isPlayingMartigli &&
+        !isPlayingBinaural &&
+        !isPlayingSymmetry &&
+        !isPlayingMartigliBinaural
+      ) {
         await audioContext.current.resume();
       }
 
       console.log("Creating MartigliBinauralNode...");
-      const rawNode = global.createMartigliBinauralNode(audioContext.current.context);
+      const rawNode = global.createMartigliBinauralNode(
+        audioContext.current.context
+      );
       const node = new MartigliBinauralNode(audioContext.current, rawNode);
 
       Object.assign(node, MARTIGLI_BINAURAL_PRESET, {
@@ -323,11 +342,18 @@ export default function TabTwoScreen() {
         panOscTrans: mbPanOscTrans,
       });
 
-      console.log("MartigliBinaural params - fl:", node.fl, "fr:", node.fr, "ma:", node.ma);
-      
+      console.log(
+        "MartigliBinaural params - fl:",
+        node.fl,
+        "fr:",
+        node.fr,
+        "ma:",
+        node.ma
+      );
+
       node.connect(audioContext.current.destination);
       node.start();
-      
+
       // Set as active for animation registry
       node.isOn = true;
 
@@ -338,8 +364,12 @@ export default function TabTwoScreen() {
         animationInterval.current = setInterval(() => {
           if (martigliBinauralNode.current) {
             setAnimationValue(martigliBinauralNode.current.animationValue || 0);
-            setMbCurrentInhaleDur(martigliBinauralNode.current.currentInhaleDur);
-            setMbCurrentExhaleDur(martigliBinauralNode.current.currentExhaleDur);
+            setMbCurrentInhaleDur(
+              martigliBinauralNode.current.currentInhaleDur
+            );
+            setMbCurrentExhaleDur(
+              martigliBinauralNode.current.currentExhaleDur
+            );
           }
         }, 16);
       }
@@ -433,7 +463,8 @@ export default function TabTwoScreen() {
                   <TouchableOpacity
                     style={[
                       styles.adjustButton,
-                      (baseInhaleDur < 2 || baseExhaleDur < 2) && styles.disabledButton
+                      (baseInhaleDur < 2 || baseExhaleDur < 2) &&
+                        styles.disabledButton,
                     ]}
                     disabled={baseInhaleDur < 2 || baseExhaleDur < 2}
                     onPress={() => {
@@ -466,7 +497,8 @@ export default function TabTwoScreen() {
                   <TouchableOpacity
                     style={[
                       styles.adjustButton,
-                      (baseInhaleDur > 15 || baseExhaleDur > 15) && styles.disabledButton
+                      (baseInhaleDur > 15 || baseExhaleDur > 15) &&
+                        styles.disabledButton,
                     ]}
                     disabled={baseInhaleDur > 15 || baseExhaleDur > 15}
                     onPress={() => {
@@ -705,7 +737,8 @@ export default function TabTwoScreen() {
               value={martigliBinauralVolume}
               onValueChange={(val) => {
                 setMartigliBinauralVolume(val);
-                if (martigliBinauralNode.current) martigliBinauralNode.current.volume = val;
+                if (martigliBinauralNode.current)
+                  martigliBinauralNode.current.volume = val;
               }}
               minimumTrackTintColor="#1EB1FC"
               maximumTrackTintColor="#8B8B8B"
@@ -781,7 +814,9 @@ export default function TabTwoScreen() {
           {isPlayingMartigliBinaural && (
             <>
               <Button
-                title={martigliBinauralNode.current?.isPaused ? "Resume" : "Pause"}
+                title={
+                  martigliBinauralNode.current?.isPaused ? "Resume" : "Pause"
+                }
                 onPress={() =>
                   martigliBinauralNode.current?.isPaused
                     ? martigliBinauralNode.current?.resume()
@@ -823,7 +858,8 @@ export default function TabTwoScreen() {
                   <TouchableOpacity
                     style={[
                       styles.adjustButton,
-                      (mbBaseInhaleDur < 2 || mbBaseExhaleDur < 2) && styles.disabledButton
+                      (mbBaseInhaleDur < 2 || mbBaseExhaleDur < 2) &&
+                        styles.disabledButton,
                     ]}
                     disabled={mbBaseInhaleDur < 2 || mbBaseExhaleDur < 2}
                     onPress={() => {
@@ -856,7 +892,8 @@ export default function TabTwoScreen() {
                   <TouchableOpacity
                     style={[
                       styles.adjustButton,
-                      (mbBaseInhaleDur > 15 || mbBaseExhaleDur > 15) && styles.disabledButton
+                      (mbBaseInhaleDur > 15 || mbBaseExhaleDur > 15) &&
+                        styles.disabledButton,
                     ]}
                     disabled={mbBaseInhaleDur > 15 || mbBaseExhaleDur > 15}
                     onPress={() => {
@@ -891,16 +928,22 @@ export default function TabTwoScreen() {
               <View style={styles.box}>
                 <Text style={styles.label}>Carrier Frequencies</Text>
                 <Text style={styles.text}>
-                  {MARTIGLI_BINAURAL_PRESET.fl}Hz (L) • {MARTIGLI_BINAURAL_PRESET.fr}Hz (R)
+                  {MARTIGLI_BINAURAL_PRESET.fl}Hz (L) •{" "}
+                  {MARTIGLI_BINAURAL_PRESET.fr}Hz (R)
                 </Text>
                 <Text style={styles.text}>
-                  Beat Frequency: {Math.abs(MARTIGLI_BINAURAL_PRESET.fl - MARTIGLI_BINAURAL_PRESET.fr)}Hz
+                  Beat Frequency:{" "}
+                  {Math.abs(
+                    MARTIGLI_BINAURAL_PRESET.fl - MARTIGLI_BINAURAL_PRESET.fr
+                  )}
+                  Hz
                 </Text>
                 <Text style={styles.text}>
                   Modulation: ±{MARTIGLI_BINAURAL_PRESET.ma}Hz
                 </Text>
                 <Text style={styles.subtext}>
-                  Panning: {["None", "Ping-Pong", "Sine", "Martigli LFO"][mbPanOscMode]}
+                  Panning:{" "}
+                  {["None", "Ping-Pong", "Sine", "Martigli LFO"][mbPanOscMode]}
                 </Text>
               </View>
             </>

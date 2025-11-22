@@ -88,12 +88,12 @@ export class SessionManager {
     this._stopTimer();
     this._stopAnimation();
     this._stopVoices();
-    
+
     // Wait for fade-out (1.5s), then cleanup
     setTimeout(() => {
       this._cleanup();
     }, 1500);
-    
+
     this._setState("stopped");
   }
 
@@ -173,7 +173,10 @@ export class SessionManager {
         break;
 
       case "Martigli-Binaural":
-        node = new MartigliBinauralNode(ctx, global.createMartigliBinauralNode(ctx.context));
+        node = new MartigliBinauralNode(
+          ctx,
+          global.createMartigliBinauralNode(ctx.context)
+        );
         node.fl = settings.fl ?? 200;
         node.fr = settings.fr ?? 210;
         node.waveformL = settings.waveformL ?? 0;
