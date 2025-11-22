@@ -15,6 +15,11 @@ private:
   float _panOscPhase = 0.0f;
   bool _isRamping = false;
   
+  // Track the period for the current breathing cycle
+  float _currentCycleInhale = 0.0f;
+  float _currentCycleExhale = 0.0f;
+  float _lastPhase = 0.0f;  // Track previous phase to detect wrapping
+  
 public:
   explicit MartigliNode(BaseAudioContext *context);
   

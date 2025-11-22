@@ -1,4 +1,7 @@
 This type of voice is similar to Martigli, with the difference that there are two carriers instead, whose frequency differs slightly.
+It is a martigli that also behaves like a binaural voice, using the same panning logic as the binaural voice.
+you can find the panning logic in panningInstructions.txt.
+
 the lfo will drive both carriers alike, but only one of these will drive the animation.
 
 this is the old tone.js logic related to it:

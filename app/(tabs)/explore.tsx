@@ -1,5 +1,12 @@
 import React, { useEffect, useState, useRef } from "react";
-import { ActivityIndicator, StyleSheet, View, Text, ScrollView, TouchableOpacity } from "react-native";
+import {
+  ActivityIndicator,
+  StyleSheet,
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+} from "react-native";
 import Slider from "@react-native-community/slider";
 import { Container, Button } from "../components";
 import NativeOscillatorModule from "../../specs/NativeOscillatorModule";
@@ -12,8 +19,8 @@ const MARTIGLI_PRESET = {
   mp1: 20,
   md: 600,
   waveformM: 0,
-  inhaleDur: 3,
-  exhaleDur: 8,
+  inhaleDur: 5,
+  exhaleDur: 5,
   panOsc: 0,
   panOscPeriod: 120,
   panOscTrans: 20,
@@ -47,21 +54,26 @@ export default function TabTwoScreen() {
   const [isPlayingBinaural, setIsPlayingBinaural] = useState(false);
   const [isPlayingSymmetry, setIsPlayingSymmetry] = useState(false);
   const [animationValue, setAnimationValue] = useState(0);
-  
+
   // Current Martigli durations (for live display)
   const [currentInhaleDur, setCurrentInhaleDur] = useState(0);
   const [currentExhaleDur, setCurrentExhaleDur] = useState(0);
-  
+
+  // Base Martigli durations (user-adjustable)
+  const [baseInhaleDur, setBaseInhaleDur] = useState(MARTIGLI_PRESET.inhaleDur);
+  const [baseExhaleDur, setBaseExhaleDur] = useState(MARTIGLI_PRESET.exhaleDur);
+  const [targetPeriod, setTargetPeriod] = useState(MARTIGLI_PRESET.mp1);
+
   // Volume controls
   const [martigliVolume, setMartigliVolume] = useState(0.3);
   const [binauralVolume, setBinauralVolume] = useState(0.3);
   const [symmetryVolume, setSymmetryVolume] = useState(0.3);
-  
+
   // Panning test controls
   const [panOscMode, setPanOscMode] = useState(3);
   const [panOscPeriod, setPanOscPeriod] = useState(10);
   const [panOscTrans, setPanOscTrans] = useState(2);
-  
+
   const audioContext = useRef<AudioContext | null>(null);
   const martigliNode = useRef<MartigliNode | null>(null);
   const binauralNode = useRef<BinauralNode | null>(null);
@@ -96,7 +108,9 @@ export default function TabTwoScreen() {
         global.createMartigliNode(audioContext.current.context)
       );
       Object.assign(node, MARTIGLI_PRESET, {
-        mp0: MARTIGLI_PRESET.inhaleDur + MARTIGLI_PRESET.exhaleDur,
+        mp0: baseInhaleDur + baseExhaleDur,
+        inhaleDur: baseInhaleDur,
+        exhaleDur: baseExhaleDur,
         volume: martigliVolume,
       });
       node.connect(audioContext.current.destination);
@@ -110,8 +124,24 @@ export default function TabTwoScreen() {
         setAnimationValue(martigliNode.current?.animationValue || 0);
         // Also update current durations for display
         if (martigliNode.current) {
-          setCurrentInhaleDur(martigliNode.current.currentInhaleDur);
-          setCurrentExhaleDur(martigliNode.current.currentExhaleDur);
+          const inhale = martigliNode.current.currentInhaleDur;
+          const exhale = martigliNode.current.currentExhaleDur;
+          const period = martigliNode.current.currentPeriod;
+
+          setCurrentInhaleDur(inhale);
+          setCurrentExhaleDur(exhale);
+
+          // Debug: log occasionally to verify
+          if (Math.random() < 0.02) {
+            // ~1 time per second
+            console.log(
+              `Martigli timing - Period: ${period.toFixed(
+                2
+              )}s, Inhale: ${inhale.toFixed(2)}s, Exhale: ${exhale.toFixed(
+                2
+              )}s, Total: ${(inhale + exhale).toFixed(2)}s`
+            );
+          }
         }
       }, 16);
 
@@ -152,11 +182,11 @@ export default function TabTwoScreen() {
       console.log("BinauralNode wrapper created:", node);
 
       // Apply preset and test controls
-      Object.assign(node, BINAURAL_PRESET, { 
+      Object.assign(node, BINAURAL_PRESET, {
         volume: binauralVolume,
         panOsc: panOscMode,
         panOscPeriod: panOscPeriod,
-        panOscTrans: panOscTrans
+        panOscTrans: panOscTrans,
       });
       console.log(
         "Properties assigned - fl:",
@@ -237,7 +267,7 @@ export default function TabTwoScreen() {
 
   return (
     <Container centered>
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={true}
@@ -246,281 +276,334 @@ export default function TabTwoScreen() {
 
         <Text style={styles.title}>Audio Voice Tests</Text>
 
-      <View style={styles.section}>
-        <Text style={styles.subtitle}>🫁 Martigli Breathing Guide</Text>
-        
-        <View style={styles.sliderContainer}>
-          <Text style={styles.label}>Volume: {(martigliVolume * 100).toFixed(0)}%</Text>
-          <Slider
-            style={styles.slider}
-            minimumValue={0}
-            maximumValue={1}
-            value={martigliVolume}
-            onValueChange={(val) => {
-              setMartigliVolume(val);
-              if (martigliNode.current) martigliNode.current.volume = val;
-            }}
-            minimumTrackTintColor="#1EB1FC"
-            maximumTrackTintColor="#8B8B8B"
-            thumbTintColor="#1EB1FC"
+        <View style={styles.section}>
+          <Text style={styles.subtitle}>🫁 Martigli Breathing Guide</Text>
+
+          <View style={styles.sliderContainer}>
+            <Text style={styles.label}>
+              Volume: {(martigliVolume * 100).toFixed(0)}%
+            </Text>
+            <Slider
+              style={styles.slider}
+              minimumValue={0}
+              maximumValue={1}
+              value={martigliVolume}
+              onValueChange={(val) => {
+                setMartigliVolume(val);
+                if (martigliNode.current) martigliNode.current.volume = val;
+              }}
+              minimumTrackTintColor="#1EB1FC"
+              maximumTrackTintColor="#8B8B8B"
+              thumbTintColor="#1EB1FC"
+              disabled={!isReady}
+            />
+          </View>
+
+          <Button
+            title={isPlayingMartigli ? "Stop Martigli" : "Start Martigli"}
+            onPress={toggleMartigli}
             disabled={!isReady}
           />
-        </View>
-        
-        <Button
-          title={isPlayingMartigli ? "Stop Martigli" : "Start Martigli"}
-          onPress={toggleMartigli}
-          disabled={!isReady}
-        />
 
-        {isPlayingMartigli && (
-          <>
-            <Button
-              title={martigliNode.current?.isPaused ? "Resume" : "Pause"}
-              onPress={() =>
-                martigliNode.current?.isPaused
-                  ? martigliNode.current?.resume()
-                  : martigliNode.current?.pause()
-              }
-            />
-
-            <View style={styles.box}>
-              <Text style={styles.label}>
-                Breathing: {(animationValue * 100).toFixed(0)}%
-              </Text>
-              <View style={styles.bar}>
-                <View
-                  style={[styles.fill, { width: `${animationValue * 100}%` }]}
-                />
-              </View>
-            </View>
-
-            <View style={styles.box}>
-              <Text style={styles.label}>Live Rhythm Adjustment</Text>
-              <Text style={styles.text}>
-                Current: {currentInhaleDur.toFixed(1)}s in / {currentExhaleDur.toFixed(1)}s out (Total: {(currentInhaleDur + currentExhaleDur).toFixed(1)}s)
-              </Text>
-              
-              <View style={styles.sliderContainer}>
-                <Text style={styles.label}>Inhale: {MARTIGLI_PRESET.inhaleDur.toFixed(1)}s</Text>
-                <Slider
-                  style={styles.slider}
-                  minimumValue={1}
-                  maximumValue={10}
-                  step={0.5}
-                  value={MARTIGLI_PRESET.inhaleDur}
-                  onValueChange={(val) => {
-                    MARTIGLI_PRESET.inhaleDur = val;
-                    if (martigliNode.current) martigliNode.current.inhaleDur = val;
-                  }}
-                  minimumTrackTintColor="#1EB1FC"
-                  maximumTrackTintColor="#8B8B8B"
-                  thumbTintColor="#1EB1FC"
-                />
-              </View>
-              
-              <View style={styles.sliderContainer}>
-                <Text style={styles.label}>Exhale: {MARTIGLI_PRESET.exhaleDur.toFixed(1)}s</Text>
-                <Slider
-                  style={styles.slider}
-                  minimumValue={1}
-                  maximumValue={15}
-                  step={0.5}
-                  value={MARTIGLI_PRESET.exhaleDur}
-                  onValueChange={(val) => {
-                    MARTIGLI_PRESET.exhaleDur = val;
-                    if (martigliNode.current) martigliNode.current.exhaleDur = val;
-                  }}
-                  minimumTrackTintColor="#1EB1FC"
-                  maximumTrackTintColor="#8B8B8B"
-                  thumbTintColor="#1EB1FC"
-                />
-              </View>
-              
-              <Text style={styles.text}>
-                Target: {MARTIGLI_PRESET.mp1}s over {MARTIGLI_PRESET.md}s ({(MARTIGLI_PRESET.md/60).toFixed(0)} min)
-              </Text>
-            </View>
-          </>
-        )}
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.subtitle}>🎧 Binaural Beats - Panning Test</Text>
-        
-        <View style={styles.sliderContainer}>
-          <Text style={styles.label}>Volume: {(binauralVolume * 100).toFixed(0)}%</Text>
-          <Slider
-            style={styles.slider}
-            minimumValue={0}
-            maximumValue={1}
-            value={binauralVolume}
-            onValueChange={(val) => {
-              setBinauralVolume(val);
-              if (binauralNode.current) binauralNode.current.volume = val;
-            }}
-            minimumTrackTintColor="#1EB1FC"
-            maximumTrackTintColor="#8B8B8B"
-            thumbTintColor="#1EB1FC"
-            disabled={!isReady}
-          />
-        </View>
-        
-        {!isPlayingBinaural && (
-          <>
-            <View style={styles.controlGroup}>
-              <Text style={styles.label}>Panning Mode:</Text>
-              <View style={styles.buttonRow}>
-                {["None", "Ping-Pong", "Sine", "Martigli"].map((label, idx) => (
-                  <TouchableOpacity
-                    key={idx}
-                    onPress={() => setPanOscMode(idx)}
-                    style={[styles.modeButton, panOscMode === idx && styles.activeButton]}
-                  >
-                    <Text style={styles.buttonText}>{label}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-            
-            {(panOscMode === 1 || panOscMode === 2) && (
-              <View style={styles.sliderContainer}>
-                <Text style={styles.label}>Period: {panOscPeriod}s</Text>
-                <Slider
-                  style={styles.slider}
-                  minimumValue={5}
-                  maximumValue={30}
-                  step={1}
-                  value={panOscPeriod}
-                  onValueChange={setPanOscPeriod}
-                  minimumTrackTintColor="#1EB1FC"
-                  maximumTrackTintColor="#8B8B8B"
-                  thumbTintColor="#1EB1FC"
-                />
-              </View>
-            )}
-            
-            {panOscMode === 1 && (
-              <View style={styles.sliderContainer}>
-                <Text style={styles.label}>Transition: {panOscTrans}s</Text>
-                <Slider
-                  style={styles.slider}
-                  minimumValue={1}
-                  maximumValue={10}
-                  step={1}
-                  value={panOscTrans}
-                  onValueChange={setPanOscTrans}
-                  minimumTrackTintColor="#1EB1FC"
-                  maximumTrackTintColor="#8B8B8B"
-                  thumbTintColor="#1EB1FC"
-                />
-              </View>
-            )}
-          </>
-        )}
-        
-        <Button
-          title={isPlayingBinaural ? "Stop Binaural" : "Start Binaural"}
-          onPress={toggleBinaural}
-          disabled={!isReady}
-        />
-
-        {isPlayingBinaural && (
-          <>
-            <Button
-              title={binauralNode.current?.isPaused ? "Resume" : "Pause"}
-              onPress={() =>
-                binauralNode.current?.isPaused
-                  ? binauralNode.current?.resume()
-                  : binauralNode.current?.pause()
-              }
-            />
-
-            <View style={styles.box}>
-              <Text style={styles.label}>Panning Info</Text>
-              <Text style={styles.text}>
-                Mode: {["None", "Ping-Pong", "Sine", "Martigli"][panOscMode]}
-              </Text>
-              <Text style={styles.text}>
-                {BINAURAL_PRESET.fl}Hz (L) • {BINAURAL_PRESET.fr}Hz (R) • {Math.abs(BINAURAL_PRESET.fl - BINAURAL_PRESET.fr)}Hz beat
-              </Text>
-              {panOscMode === 3 && (
-                <Text style={styles.text}>
-                  Martigli Sync: {(animationValue * 100).toFixed(0)}%
-                  {!isPlayingMartigli && " (Start Martigli!)"}
-                </Text>
-              )}
-            </View>
-          </>
-        )}
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.subtitle}>🎵 Symmetry Note Sequences</Text>
-        
-        <View style={styles.sliderContainer}>
-          <Text style={styles.label}>Volume: {(symmetryVolume * 100).toFixed(0)}%</Text>
-          <Slider
-            style={styles.slider}
-            minimumValue={0}
-            maximumValue={1}
-            value={symmetryVolume}
-            onValueChange={(val) => {
-              setSymmetryVolume(val);
-              if (symmetryNode.current) symmetryNode.current.volume = val;
-            }}
-            minimumTrackTintColor="#1EB1FC"
-            maximumTrackTintColor="#8B8B8B"
-            thumbTintColor="#1EB1FC"
-            disabled={!isReady}
-          />
-        </View>
-        
-        <Button
-          title={isPlayingSymmetry ? "Stop Symmetry" : "Start Symmetry"}
-          onPress={toggleSymmetry}
-          disabled={!isReady}
-        />
-
-        {isPlayingSymmetry && (
-          <>
-            <Button
-              title="Pause/Resume"
-              onPress={() =>
-                symmetryNode.current?.pause
-                  ? symmetryNode.current?.pause()
-                  : symmetryNode.current?.resume()
-              }
-            />
-
-            <View style={styles.box}>
-              <Text style={styles.label}>Parameters</Text>
-              <Text style={styles.text}>
-                Base Frequency: {SYMMETRY_PRESET.f0}Hz | Notes:{" "}
-                {SYMMETRY_PRESET.nnotes}
-              </Text>
-              <Text style={styles.text}>
-                Octave Span: {SYMMETRY_PRESET.noctaves} | Loop:{" "}
-                {SYMMETRY_PRESET.d}s
-              </Text>
-              <Text style={styles.text}>
-                Note Duration:{" "}
-                {(SYMMETRY_PRESET.d / SYMMETRY_PRESET.nnotes / 2).toFixed(2)}s |
-                Separation:{" "}
-                {(SYMMETRY_PRESET.d / SYMMETRY_PRESET.nnotes).toFixed(2)}s
-              </Text>
-              <Text style={styles.text}>
-                Permutation:{" "}
-                {
-                  ["Shuffle", "Rotate Fwd", "Rotate Back", "Reverse", "None"][
-                    SYMMETRY_PRESET.permfunc
-                  ]
+          {isPlayingMartigli && (
+            <>
+              <Button
+                title={martigliNode.current?.isPaused ? "Resume" : "Pause"}
+                onPress={() =>
+                  martigliNode.current?.isPaused
+                    ? martigliNode.current?.resume()
+                    : martigliNode.current?.pause()
                 }
-              </Text>
-            </View>
-          </>
-        )}
-      </View>
+              />
+
+              <View style={styles.box}>
+                <Text style={styles.label}>
+                  Breathing: {(animationValue * 100).toFixed(0)}%
+                </Text>
+                <View style={styles.bar}>
+                  <View
+                    style={[styles.fill, { width: `${animationValue * 100}%` }]}
+                  />
+                </View>
+              </View>
+
+              <View style={styles.box}>
+                <Text style={styles.label}>Breathing Rhythm Control</Text>
+                <Text style={styles.text}>
+                  Current Period:{" "}
+                  {(currentInhaleDur + currentExhaleDur).toFixed(1)}s
+                </Text>
+                <Text style={styles.subtext}>
+                  Inhale: {currentInhaleDur.toFixed(1)}s | Exhale:{" "}
+                  {currentExhaleDur.toFixed(1)}s
+                </Text>
+                <Text style={styles.subtext}>
+                  Base: {baseInhaleDur.toFixed(1)}s in /{" "}
+                  {baseExhaleDur.toFixed(1)}s out
+                </Text>
+                <Text style={styles.subtext}>
+                  Target: {targetPeriod.toFixed(1)}s over{" "}
+                  {(MARTIGLI_PRESET.md / 60).toFixed(0)} min
+                </Text>
+
+                <View style={styles.buttonRow}>
+                  <TouchableOpacity
+                    style={[
+                      styles.adjustButton,
+                      (baseInhaleDur < 2 || baseExhaleDur < 2) && styles.disabledButton
+                    ]}
+                    disabled={baseInhaleDur < 2 || baseExhaleDur < 2}
+                    onPress={() => {
+                      const factor = 0.9;
+                      const newInhale = Math.max(1, baseInhaleDur * factor);
+                      const newExhale = Math.max(1, baseExhaleDur * factor);
+                      const newMp0 = newInhale + newExhale;
+                      const newMp1 =
+                        newMp0 *
+                        (targetPeriod / (baseInhaleDur + baseExhaleDur));
+
+                      setBaseInhaleDur(newInhale);
+                      setBaseExhaleDur(newExhale);
+                      setTargetPeriod(newMp1);
+
+                      if (martigliNode.current) {
+                        Object.assign(martigliNode.current, {
+                          inhaleDur: newInhale,
+                          exhaleDur: newExhale,
+                          mp0: newMp0,
+                          mp1: newMp1,
+                        });
+                      }
+                    }}
+                  >
+                    <Text style={styles.adjustButtonText}>− 10%</Text>
+                    <Text style={styles.adjustButtonLabel}>SLOWER</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.adjustButton,
+                      (baseInhaleDur > 15 || baseExhaleDur > 15) && styles.disabledButton
+                    ]}
+                    disabled={baseInhaleDur > 15 || baseExhaleDur > 15}
+                    onPress={() => {
+                      const factor = 1.1;
+                      const newInhale = Math.min(20, baseInhaleDur * factor);
+                      const newExhale = Math.min(30, baseExhaleDur * factor);
+                      const newMp0 = newInhale + newExhale;
+                      const newMp1 =
+                        newMp0 *
+                        (targetPeriod / (baseInhaleDur + baseExhaleDur));
+
+                      setBaseInhaleDur(newInhale);
+                      setBaseExhaleDur(newExhale);
+                      setTargetPeriod(newMp1);
+
+                      if (martigliNode.current) {
+                        Object.assign(martigliNode.current, {
+                          inhaleDur: newInhale,
+                          exhaleDur: newExhale,
+                          mp0: newMp0,
+                          mp1: newMp1,
+                        });
+                      }
+                    }}
+                  >
+                    <Text style={styles.adjustButtonText}>+ 10%</Text>
+                    <Text style={styles.adjustButtonLabel}>FASTER</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </>
+          )}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.subtitle}>🎧 Binaural Beats - Panning Test</Text>
+
+          <View style={styles.sliderContainer}>
+            <Text style={styles.label}>
+              Volume: {(binauralVolume * 100).toFixed(0)}%
+            </Text>
+            <Slider
+              style={styles.slider}
+              minimumValue={0}
+              maximumValue={1}
+              value={binauralVolume}
+              onValueChange={(val) => {
+                setBinauralVolume(val);
+                if (binauralNode.current) binauralNode.current.volume = val;
+              }}
+              minimumTrackTintColor="#1EB1FC"
+              maximumTrackTintColor="#8B8B8B"
+              thumbTintColor="#1EB1FC"
+              disabled={!isReady}
+            />
+          </View>
+
+          {!isPlayingBinaural && (
+            <>
+              <View style={styles.controlGroup}>
+                <Text style={styles.label}>Panning Mode:</Text>
+                <View style={styles.buttonRow}>
+                  {["None", "Ping-Pong", "Sine", "Martigli"].map(
+                    (label, idx) => (
+                      <TouchableOpacity
+                        key={idx}
+                        onPress={() => setPanOscMode(idx)}
+                        style={[
+                          styles.modeButton,
+                          panOscMode === idx && styles.activeButton,
+                        ]}
+                      >
+                        <Text style={styles.buttonText}>{label}</Text>
+                      </TouchableOpacity>
+                    )
+                  )}
+                </View>
+              </View>
+
+              {(panOscMode === 1 || panOscMode === 2) && (
+                <View style={styles.sliderContainer}>
+                  <Text style={styles.label}>Period: {panOscPeriod}s</Text>
+                  <Slider
+                    style={styles.slider}
+                    minimumValue={5}
+                    maximumValue={30}
+                    step={1}
+                    value={panOscPeriod}
+                    onValueChange={setPanOscPeriod}
+                    minimumTrackTintColor="#1EB1FC"
+                    maximumTrackTintColor="#8B8B8B"
+                    thumbTintColor="#1EB1FC"
+                  />
+                </View>
+              )}
+
+              {panOscMode === 1 && (
+                <View style={styles.sliderContainer}>
+                  <Text style={styles.label}>Transition: {panOscTrans}s</Text>
+                  <Slider
+                    style={styles.slider}
+                    minimumValue={1}
+                    maximumValue={10}
+                    step={1}
+                    value={panOscTrans}
+                    onValueChange={setPanOscTrans}
+                    minimumTrackTintColor="#1EB1FC"
+                    maximumTrackTintColor="#8B8B8B"
+                    thumbTintColor="#1EB1FC"
+                  />
+                </View>
+              )}
+            </>
+          )}
+
+          <Button
+            title={isPlayingBinaural ? "Stop Binaural" : "Start Binaural"}
+            onPress={toggleBinaural}
+            disabled={!isReady}
+          />
+
+          {isPlayingBinaural && (
+            <>
+              <Button
+                title={binauralNode.current?.isPaused ? "Resume" : "Pause"}
+                onPress={() =>
+                  binauralNode.current?.isPaused
+                    ? binauralNode.current?.resume()
+                    : binauralNode.current?.pause()
+                }
+              />
+
+              <View style={styles.box}>
+                <Text style={styles.label}>Panning Info</Text>
+                <Text style={styles.text}>
+                  Mode: {["None", "Ping-Pong", "Sine", "Martigli"][panOscMode]}
+                </Text>
+                <Text style={styles.text}>
+                  {BINAURAL_PRESET.fl}Hz (L) • {BINAURAL_PRESET.fr}Hz (R) •{" "}
+                  {Math.abs(BINAURAL_PRESET.fl - BINAURAL_PRESET.fr)}Hz beat
+                </Text>
+                {panOscMode === 3 && (
+                  <Text style={styles.text}>
+                    Martigli Sync: {(animationValue * 100).toFixed(0)}%
+                    {!isPlayingMartigli && " (Start Martigli!)"}
+                  </Text>
+                )}
+              </View>
+            </>
+          )}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.subtitle}>🎵 Symmetry Note Sequences</Text>
+
+          <View style={styles.sliderContainer}>
+            <Text style={styles.label}>
+              Volume: {(symmetryVolume * 100).toFixed(0)}%
+            </Text>
+            <Slider
+              style={styles.slider}
+              minimumValue={0}
+              maximumValue={1}
+              value={symmetryVolume}
+              onValueChange={(val) => {
+                setSymmetryVolume(val);
+                if (symmetryNode.current) symmetryNode.current.volume = val;
+              }}
+              minimumTrackTintColor="#1EB1FC"
+              maximumTrackTintColor="#8B8B8B"
+              thumbTintColor="#1EB1FC"
+              disabled={!isReady}
+            />
+          </View>
+
+          <Button
+            title={isPlayingSymmetry ? "Stop Symmetry" : "Start Symmetry"}
+            onPress={toggleSymmetry}
+            disabled={!isReady}
+          />
+
+          {isPlayingSymmetry && (
+            <>
+              <Button
+                title="Pause/Resume"
+                onPress={() =>
+                  symmetryNode.current?.pause
+                    ? symmetryNode.current?.pause()
+                    : symmetryNode.current?.resume()
+                }
+              />
+
+              <View style={styles.box}>
+                <Text style={styles.label}>Parameters</Text>
+                <Text style={styles.text}>
+                  Base Frequency: {SYMMETRY_PRESET.f0}Hz | Notes:{" "}
+                  {SYMMETRY_PRESET.nnotes}
+                </Text>
+                <Text style={styles.text}>
+                  Octave Span: {SYMMETRY_PRESET.noctaves} | Loop:{" "}
+                  {SYMMETRY_PRESET.d}s
+                </Text>
+                <Text style={styles.text}>
+                  Note Duration:{" "}
+                  {(SYMMETRY_PRESET.d / SYMMETRY_PRESET.nnotes / 2).toFixed(2)}s
+                  | Separation:{" "}
+                  {(SYMMETRY_PRESET.d / SYMMETRY_PRESET.nnotes).toFixed(2)}s
+                </Text>
+                <Text style={styles.text}>
+                  Permutation:{" "}
+                  {
+                    ["Shuffle", "Rotate Fwd", "Rotate Back", "Reverse", "None"][
+                      SYMMETRY_PRESET.permfunc
+                    ]
+                  }
+                </Text>
+              </View>
+            </>
+          )}
+        </View>
       </ScrollView>
     </Container>
   );
@@ -535,15 +618,15 @@ const styles = StyleSheet.create({
     // padding: 3,
     paddingBottom: 40,
   },
-  title: { 
-    color: "#FFF", 
-    fontSize: 22, 
-    fontWeight: "bold", 
+  title: {
+    color: "#FFF",
+    fontSize: 22,
+    fontWeight: "bold",
     marginBottom: 20,
     textAlign: "center",
   },
-  section: { 
-    width: "100%", 
+  section: {
+    width: "100%",
     marginBottom: 20,
     backgroundColor: "rgba(255,255,255,0.05)",
     borderRadius: 12,
@@ -595,10 +678,10 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "600",
   },
-  label: { 
-    color: "#FFF", 
-    fontSize: 15, 
-    fontWeight: "600", 
+  label: {
+    color: "#FFF",
+    fontSize: 15,
+    fontWeight: "600",
     marginBottom: 8,
   },
   bar: {
@@ -609,15 +692,48 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     marginTop: 8,
   },
-  fill: { 
-    height: "100%", 
-    backgroundColor: "#1EB1FC", 
+  fill: {
+    height: "100%",
+    backgroundColor: "#1EB1FC",
     borderRadius: 12,
   },
-  text: { 
-    color: "rgba(255,255,255,0.75)", 
-    fontSize: 13, 
+  text: {
+    color: "rgba(255,255,255,0.75)",
+    fontSize: 13,
     marginBottom: 4,
     lineHeight: 18,
+  },
+  subtext: {
+    color: "rgba(255,255,255,0.6)",
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  adjustButton: {
+    flex: 1,
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    backgroundColor: "rgba(30, 177, 252, 0.2)",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "rgba(30, 177, 252, 0.4)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  disabledButton: {
+    backgroundColor: "rgba(100, 100, 100, 0.1)",
+    borderColor: "rgba(100, 100, 100, 0.2)",
+    opacity: 0.5,
+  },
+  adjustButtonText: {
+    color: "#1EB1FC",
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 4,
+  },
+  adjustButtonLabel: {
+    color: "rgba(255,255,255,0.7)",
+    fontSize: 11,
+    fontWeight: "600",
+    letterSpacing: 0.5,
   },
 });
