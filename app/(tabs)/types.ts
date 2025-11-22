@@ -94,6 +94,12 @@ export interface IMartigliBinauralNode extends IAudioNode {
   shouldStop: boolean;
 }
 
+export interface INoiseNode extends IAudioNode {
+  noiseColor: number; // 0=white, 1=pink, 2=brown
+  volume: number;
+  isPaused: boolean;
+}
+
 // Helper to create property accessors
 const createProp = (node: IAudioNode, name: string) => ({
   get: () => (node as any)[name],
@@ -507,6 +513,44 @@ export class MartigliBinauralNode extends AudioNode {
   }
 }
 
+export class NoiseNode extends AudioNode {
+  private n: INoiseNode;
+
+  constructor(context: BaseAudioContext, node: INoiseNode) {
+    super(context, node);
+    this.n = node;
+  }
+
+  get noiseColor() {
+    return this.n.noiseColor;
+  }
+  set noiseColor(v: number) {
+    this.n.noiseColor = v;
+  }
+  get volume() {
+    return this.n.volume;
+  }
+  set volume(v: number) {
+    this.n.volume = v;
+  }
+  get isPaused() {
+    return this.n.isPaused;
+  }
+
+  start() {
+    (this.n as any).start();
+  }
+  pause() {
+    (this.n as any).pause();
+  }
+  resume() {
+    (this.n as any).resume();
+  }
+  stop() {
+    (this.n as any).stop();
+  }
+}
+
 declare global {
   var createMyOscillatorNode: (context: IBaseAudioContext) => IMyOscillatorNode;
   var createMartigliNode: (context: IBaseAudioContext) => IMartigliNode;
@@ -515,4 +559,5 @@ declare global {
   var createMartigliBinauralNode: (
     context: IBaseAudioContext
   ) => IMartigliBinauralNode;
+  var createNoiseNode: (context: IBaseAudioContext) => INoiseNode;
 }

@@ -10,6 +10,7 @@ import {
   MartigliBinauralNode,
   BinauralNode,
   SymmetryNode,
+  NoiseNode,
 } from "../(tabs)/types";
 import { DEFAULT_MASTER_VOLUME, getDefaultVolume } from "./AudioConfig";
 
@@ -244,6 +245,11 @@ export class SessionManager {
         node.d = settings.d ?? 1;
         node.waveform = settings.waveform ?? 0;
         node.permfunc = settings.permfunc ?? 0;
+        break;
+
+      case "Noise":
+        node = new NoiseNode(ctx, global.createNoiseNode(ctx.context));
+        node.noiseColor = settings.noiseColor ?? 0; // 0=white, 1=pink, 2=brown
         break;
     }
 

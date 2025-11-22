@@ -13,9 +13,12 @@ import { SessionManager } from "../audio/SessionManager";
 import { presets } from "../../testPresets";
 import NativeOscillatorModule from "../../specs/NativeOscillatorModule";
 import { DEFAULT_MASTER_VOLUME } from "../audio/AudioConfig";
+import { NoiseNode } from "./types";
+import { AudioContext } from "react-native-audio-api";
 
 const SessionTest = () => {
   const sessionManager = useRef<SessionManager | null>(null);
+  const noiseNode = useRef<NoiseNode | null>(null);
   const [isReady, setIsReady] = useState(false);
 
   const presetNames = Object.keys(presets);
@@ -44,6 +47,11 @@ const SessionTest = () => {
   
   // Breathing parameters (for first Martigli voice)
   const [breathingParams, setBreathingParams] = useState<any>(null);
+
+  // Noise toggle state
+  const [noiseEnabled, setNoiseEnabled] = useState(false);
+  const [noiseColor, setNoiseColor] = useState(0); // 0=white, 1=pink, 2=brown
+  const [noiseVolume, setNoiseVolume] = useState(0.08);
 
   // Initialize session manager
   useEffect(() => {
@@ -105,18 +113,35 @@ const SessionTest = () => {
       setVoices(manager.getVoices());
     } else if (state === "paused") {
       manager.resume();
+      // Also resume noise if it was active
+      if (noiseEnabled && noiseNode.current) {
+        noiseNode.current.resume();
+      }
     }
   };
 
   const handlePause = () => {
     if (sessionManager.current && state === "playing") {
       sessionManager.current.pause();
+      // Also pause noise if active
+      if (noiseEnabled && noiseNode.current) {
+        noiseNode.current.pause();
+      }
     }
   };
 
   const handleStop = () => {
     if (sessionManager.current && state !== "idle") {
       sessionManager.current.stop();
+      // Also stop noise if active
+      if (noiseEnabled && noiseNode.current) {
+        noiseNode.current.stop();
+        setTimeout(() => {
+          noiseNode.current?.disconnect();
+          noiseNode.current = null;
+        }, 400);
+        setNoiseEnabled(false);
+      }
       // Wait for cleanup before allowing new preset selection
       setTimeout(() => {
         setVoices([]);
@@ -181,6 +206,46 @@ const SessionTest = () => {
       return () => clearInterval(interval);
     }
   }, [state, voices]);
+
+  const handleNoiseToggle = () => {
+    if (!sessionManager.current) return;
+
+    if (noiseEnabled) {
+      // Turn off noise
+      if (noiseNode.current) {
+        noiseNode.current.stop();
+        setTimeout(() => {
+          noiseNode.current?.disconnect();
+          noiseNode.current = null;
+        }, 400); // Wait for 0.3s fade + buffer
+      }
+      setNoiseEnabled(false);
+    } else {
+      // Turn on noise
+      const ctx = sessionManager.current.audioContext;
+      const node = new NoiseNode(ctx, global.createNoiseNode(ctx.context));
+      node.noiseColor = noiseColor;
+      node.volume = noiseVolume;
+      node.connect(ctx.destination);
+      node.start();
+      noiseNode.current = node;
+      setNoiseEnabled(true);
+    }
+  };
+
+  const handleNoiseColorChange = (color: number) => {
+    setNoiseColor(color);
+    if (noiseNode.current) {
+      noiseNode.current.noiseColor = color;
+    }
+  };
+
+  const handleNoiseVolumeChange = (volume: number) => {
+    setNoiseVolume(volume);
+    if (noiseNode.current) {
+      noiseNode.current.volume = volume;
+    }
+  };
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -427,6 +492,66 @@ const SessionTest = () => {
                 ))}
               </View>
             )}
+
+            {/* Noise Toggle */}
+            {state !== "idle" && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Noise Generator:</Text>
+                <View style={styles.noiseContainer}>
+                  <View style={styles.noiseToggleRow}>
+                    <Text style={styles.label}>Enable Noise</Text>
+                    <Pressable
+                      style={[
+                        styles.toggleButton,
+                        noiseEnabled && styles.toggleButtonActive,
+                      ]}
+                      onPress={handleNoiseToggle}
+                    >
+                      <Text style={styles.toggleButtonText}>
+                        {noiseEnabled ? "ON" : "OFF"}
+                      </Text>
+                    </Pressable>
+                  </View>
+
+                  {noiseEnabled && (
+                    <>
+                      <View style={styles.noiseColorRow}>
+                        <Text style={styles.label}>Color:</Text>
+                        {["White", "Pink", "Brown"].map((color, idx) => (
+                          <Pressable
+                            key={idx}
+                            style={[
+                              styles.colorButton,
+                              noiseColor === idx && styles.colorButtonActive,
+                            ]}
+                            onPress={() => handleNoiseColorChange(idx)}
+                          >
+                            <Text style={styles.colorButtonText}>{color}</Text>
+                          </Pressable>
+                        ))}
+                      </View>
+
+                      <View style={styles.sliderContainer}>
+                        <Text style={styles.label}>
+                          Volume: {Math.round(noiseVolume * 100)}%
+                        </Text>
+                        <Slider
+                          style={styles.slider}
+                          minimumValue={0}
+                          maximumValue={0.3}
+                          value={noiseVolume}
+                          onValueChange={setNoiseVolume}
+                          onSlidingComplete={handleNoiseVolumeChange}
+                          minimumTrackTintColor="#1EB1FC"
+                          maximumTrackTintColor="#8B8B8B"
+                          thumbTintColor="#1EB1FC"
+                        />
+                      </View>
+                    </>
+                  )}
+                </View>
+              </View>
+            )}
           </>
         )}
       </ScrollView>
@@ -599,6 +724,57 @@ const styles = StyleSheet.create({
     color: "#1EB1FC",
     fontSize: 16,
     fontWeight: "700",
+  },
+  noiseContainer: {
+    padding: 15,
+    backgroundColor: "#222",
+    borderRadius: 8,
+  },
+  noiseToggleRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 15,
+  },
+  toggleButton: {
+    backgroundColor: "#333",
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    minWidth: 60,
+    alignItems: "center",
+  },
+  toggleButtonActive: {
+    backgroundColor: "#1EB1FC",
+  },
+  toggleButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  noiseColorRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 15,
+  },
+  colorButton: {
+    flex: 1,
+    backgroundColor: "#333",
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  colorButtonActive: {
+    backgroundColor: "#1EB1FC",
+  },
+  colorButtonText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  sliderContainer: {
+    marginTop: 5,
   },
   slider: {
     width: "100%",
