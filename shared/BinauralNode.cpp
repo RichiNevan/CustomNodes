@@ -33,16 +33,18 @@ void BinauralNode::processNode(
     shouldStart = false;
     // Start fade-in
     currentGain_ = 0.0f;
+    startGain_ = 0.0f;
     targetGain_ = 1.0f;
-    rampDuration_ = 1.0f;
+    rampDuration_ = 1.5f;
     rampElapsed_ = 0.0f;
     isRamping_ = true;
   }
   if (shouldStop) {
     shouldStop = false;
     // Start fade-out
+    startGain_ = currentGain_;
     targetGain_ = 0.0f;
-    rampDuration_ = 1.0f;
+    rampDuration_ = 1.5f;
     rampElapsed_ = 0.0f;
     isRamping_ = true;
   }
@@ -50,6 +52,7 @@ void BinauralNode::processNode(
     isPaused = true;
     shouldPause = false;
     // Quick fade to silence
+    startGain_ = isRamping_ ? currentGain_ : 1.0f; // If not ramping, assume full volume
     targetGain_ = 0.0f;
     rampDuration_ = 0.5f;
     rampElapsed_ = 0.0f;
@@ -59,6 +62,7 @@ void BinauralNode::processNode(
     isPaused = false;
     shouldResume = false;
     // Quick fade back to full volume
+    startGain_ = currentGain_;
     targetGain_ = 1.0f;
     rampDuration_ = 0.5f;
     rampElapsed_ = 0.0f;
@@ -93,8 +97,8 @@ void BinauralNode::processNode(
           isRunning_ = false;
         }
       } else {
-        // Linear interpolation
-        currentGain_ = currentGain_ + (targetGain_ - currentGain_) * t;
+        // Linear interpolation from start to target
+        currentGain_ = startGain_ + (targetGain_ - startGain_) * t;
       }
     }
 

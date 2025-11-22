@@ -18,6 +18,7 @@ public:
     void pause();
     void resume();
     void stop();
+    void resetPhase();
     
     // Public parameters
     float fl = 250.0f;           // Left carrier frequency
@@ -41,6 +42,7 @@ public:
     bool shouldPause = false;
     bool shouldResume = false;
     bool shouldStop = false;
+    bool shouldResetPhase = false;
     bool isPaused = false;
     
     // Exposed values for UI
@@ -62,6 +64,7 @@ private:
     
     // Volume ramping
     float _currentGain = 0.0f;
+    float _startGain = 0.0f;
     float _targetGain = 1.0f;
     float _rampDuration = 1.0f;
     float _rampElapsed = 0.0f;

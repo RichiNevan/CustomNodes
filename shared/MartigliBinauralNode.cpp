@@ -2,6 +2,7 @@
 #include <audioapi/utils/AudioBus.h>
 #include <audioapi/utils/AudioArray.h>
 #include <cmath>
+#include <iostream>
 
 namespace audioapi {
 
@@ -15,7 +16,7 @@ MartigliBinauralNode::MartigliBinauralNode(BaseAudioContext *context) : AudioNod
 void MartigliBinauralNode::start() {
     _isRamping = true;
     _rampElapsedTime = 0.0f;
-    _lfoPhaseTime = M_PI_2 / (2.0f * M_PI / (inhaleDur + exhaleDur)); // Start at 90° (bottom of breath)
+    _lfoPhaseTime = 0.0f; // Start at trough (beginning of inhale)
     _carrierPhaseL = 0.0f;
     _carrierPhaseR = 0.0f;
     _lastPhase = 0.0f;
@@ -30,14 +31,17 @@ void MartigliBinauralNode::start() {
     
     isPaused = false;
     _currentGain = 0.0f;
+    _startGain = 0.0f;
     _targetGain = 1.0f;
-    _rampDuration = 1.0f;
+    _rampDuration = 1.5f;
     _rampElapsed = 0.0f;
     _isVolumeRamping = true;
 }
 
 void MartigliBinauralNode::pause() {
     isPaused = true;
+    // Capture current gain before it changes
+    _startGain = _isVolumeRamping ? _currentGain : 1.0f; // If not ramping, assume full volume
     _targetGain = 0.0f;
     _rampDuration = 0.5f;
     _rampElapsed = 0.0f;
@@ -46,15 +50,29 @@ void MartigliBinauralNode::pause() {
 
 void MartigliBinauralNode::resume() {
     isPaused = false;
+    
+    // Reset LFO phase to start from trough BEFORE fading in
+    _lfoPhaseTime = 0.0f;
+    _lastPhase = 0.0f;
+    
+    _startGain = _isVolumeRamping ? _currentGain : 0.0f;
     _targetGain = 1.0f;
     _rampDuration = 0.5f;
     _rampElapsed = 0.0f;
     _isVolumeRamping = true;
 }
 
+void MartigliBinauralNode::resetPhase() {
+    // Reset LFO phase to start from trough
+    _lfoPhaseTime = 0.0f;
+    _lastPhase = 0.0f;
+    std::cout << "MartigliBinauralNode: Phase reset to trough" << std::endl;
+}
+
 void MartigliBinauralNode::stop() {
+    _startGain = _currentGain;
     _targetGain = 0.0f;
-    _rampDuration = 1.0f;
+    _rampDuration = 1.5f;
     _rampElapsed = 0.0f;
     _isVolumeRamping = true;
 }
@@ -68,6 +86,7 @@ void MartigliBinauralNode::processNode(const std::shared_ptr<AudioBus> &bus, int
     if (shouldPause) { pause(); shouldPause = false; }
     if (shouldResume) { resume(); shouldResume = false; }
     if (shouldStop) { stop(); shouldStop = false; }
+    if (shouldResetPhase) { resetPhase(); shouldResetPhase = false; }
     
     // Calculate current period (with ramping)
     float currentPeriod = _isRamping && md > 0.0f ? mp0 + (mp1 - mp0) * std::min(_rampElapsedTime / md, 1.0f) : mp1;
@@ -93,7 +112,8 @@ void MartigliBinauralNode::processNode(const std::shared_ptr<AudioBus> &bus, int
                 _currentGain = _targetGain;
                 _isVolumeRamping = false;
             } else {
-                _currentGain = _currentGain + (_targetGain - _currentGain) * t;
+                // Linear interpolation from start to target
+                _currentGain = _startGain + (_targetGain - _startGain) * t;
             }
         }
         

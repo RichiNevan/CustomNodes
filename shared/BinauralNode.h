@@ -54,6 +54,7 @@ public:
 private:
   // Volume ramping state
   float currentGain_ = 0.0f;
+  float startGain_ = 0.0f;
   float targetGain_ = 1.0f;
   float rampDuration_ = 1.0f; // seconds
   float rampElapsed_ = 0.0f;

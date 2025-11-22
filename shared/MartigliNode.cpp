@@ -4,6 +4,7 @@
 #include <audioapi/utils/AudioBus.h>
 #include <audioapi/utils/AudioArray.h>
 #include <cmath>
+#include <iostream>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -22,8 +23,9 @@ void MartigliNode::start() {
     isPaused = false;
     // Start volume fade-in
     _currentGain = 0.0f;
+    _startGain = 0.0f;
     _targetGain = 1.0f;
-    _rampDuration = 1.0f;
+    _rampDuration = 1.5f;
     _rampElapsed = 0.0f;
     _isVolumeRamping = true;
     
@@ -41,7 +43,8 @@ void MartigliNode::start() {
 
 void MartigliNode::pause() {
     isPaused = true;
-    // Quick fade to silence
+    // Quick fade to silence - capture current gain before it changes
+    _startGain = _isVolumeRamping ? _currentGain : 1.0f; // If not ramping, assume full volume
     _targetGain = 0.0f;
     _rampDuration = 0.5f;
     _rampElapsed = 0.0f;
@@ -50,17 +53,31 @@ void MartigliNode::pause() {
 
 void MartigliNode::resume() {
     isPaused = false;
+    
+    // Reset LFO phase to start from trough BEFORE fading in
+    _lfoPhaseTime = 0.0f;
+    _lastPhase = 0.0f;
+    
     // Quick fade back to full volume
+    _startGain = _isVolumeRamping ? _currentGain : 0.0f; // Should be at 0 from pause
     _targetGain = 1.0f;
     _rampDuration = 0.5f;
     _rampElapsed = 0.0f;
     _isVolumeRamping = true;
 }
 
+void MartigliNode::resetPhase() {
+    // Reset LFO phase to start from trough
+    _lfoPhaseTime = 0.0f;
+    _lastPhase = 0.0f;
+    std::cout << "MartigliNode: Phase reset to trough" << std::endl;
+}
+
 void MartigliNode::stop() {
     // Start fade-out
+    _startGain = _currentGain;
     _targetGain = 0.0f;
-    _rampDuration = 1.0f;
+    _rampDuration = 1.5f;
     _rampElapsed = 0.0f;
     _isVolumeRamping = true;
 }
@@ -74,6 +91,7 @@ void MartigliNode::processNode(const std::shared_ptr<AudioBus> &bus, int framesT
     if (shouldPause) { pause(); shouldPause = false; }
     if (shouldResume) { resume(); shouldResume = false; }
     if (shouldStop) { stop(); shouldStop = false; }
+    if (shouldResetPhase) { resetPhase(); shouldResetPhase = false; }
     
     // Calculate current period (with ramping)
     float currentPeriod = _isRamping && md > 0.0f ? mp0 + (mp1 - mp0) * std::min(_rampElapsedTime / md, 1.0f) : mp1;
@@ -99,8 +117,8 @@ void MartigliNode::processNode(const std::shared_ptr<AudioBus> &bus, int framesT
                 _currentGain = _targetGain;
                 _isVolumeRamping = false;
             } else {
-                // Linear interpolation
-                _currentGain = _currentGain + (_targetGain - _currentGain) * t;
+                // Linear interpolation from start to target
+                _currentGain = _startGain + (_targetGain - _startGain) * t;
             }
         }
         

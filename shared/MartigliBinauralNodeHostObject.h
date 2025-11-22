@@ -43,6 +43,7 @@ public:
         addGetters(JSI_EXPORT_PROPERTY_GETTER(MartigliBinauralNodeHostObject, shouldPause));
         addGetters(JSI_EXPORT_PROPERTY_GETTER(MartigliBinauralNodeHostObject, shouldResume));
         addGetters(JSI_EXPORT_PROPERTY_GETTER(MartigliBinauralNodeHostObject, shouldStop));
+        addGetters(JSI_EXPORT_PROPERTY_GETTER(MartigliBinauralNodeHostObject, shouldResetPhase));
 
         // Add setters
         addSetters(JSI_EXPORT_PROPERTY_SETTER(MartigliBinauralNodeHostObject, fl));
@@ -64,6 +65,7 @@ public:
         addSetters(JSI_EXPORT_PROPERTY_SETTER(MartigliBinauralNodeHostObject, shouldPause));
         addSetters(JSI_EXPORT_PROPERTY_SETTER(MartigliBinauralNodeHostObject, shouldResume));
         addSetters(JSI_EXPORT_PROPERTY_SETTER(MartigliBinauralNodeHostObject, shouldStop));
+        addSetters(JSI_EXPORT_PROPERTY_SETTER(MartigliBinauralNodeHostObject, shouldResetPhase));
     }
 
     MARTIGLI_BINAURAL_PROPERTY(Number, fl)
@@ -85,6 +87,7 @@ public:
     MARTIGLI_BINAURAL_PROPERTY(Bool, shouldPause)
     MARTIGLI_BINAURAL_PROPERTY(Bool, shouldResume)
     MARTIGLI_BINAURAL_PROPERTY(Bool, shouldStop)
+    MARTIGLI_BINAURAL_PROPERTY(Bool, shouldResetPhase)
 
     // Read-only properties
     JSI_PROPERTY_GETTER(isPaused) {

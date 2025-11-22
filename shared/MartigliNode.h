@@ -47,6 +47,7 @@ public:
   bool shouldPause = false;
   bool shouldResume = false;
   bool shouldStop = false;
+  bool shouldResetPhase = false;
   
   // Current calculated values (read-only, updated during processing)
   float currentInhaleDur = 0.0f;
@@ -57,10 +58,12 @@ public:
   void pause();
   void resume();
   void stop();
+  void resetPhase();
 
 private:
   // Volume ramping state
   float _currentGain = 0.0f;
+  float _startGain = 0.0f;
   float _targetGain = 1.0f;
   float _rampDuration = 1.0f;
   float _rampElapsed = 0.0f;

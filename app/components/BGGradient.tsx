@@ -20,7 +20,7 @@ const BGGradient = () => {
         <Rect x={0} y={0} width={size.width} height={size.height}>
           <RadialGradient
             r={size.width}
-            c={vec(size.width / 2, 0)}
+            c={vec(size.width / 2, 200)}
             colors={[colors.backgroundLight, colors.background]}
           />
         </Rect>

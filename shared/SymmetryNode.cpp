@@ -45,7 +45,7 @@ void SymmetryNode::processNode(const std::shared_ptr<AudioBus> &bus, int framesT
     if (_useEnvelope) {
       _rampDuration = ENVELOPE_ATTACK; // Use envelope attack time
     } else {
-      _rampDuration = 1.0f; // Fixed 1 second
+      _rampDuration = 1.5f; // Fixed 1.5 seconds
     }
     
     _loopPhaseTime = 0.0f;
@@ -68,7 +68,7 @@ void SymmetryNode::processNode(const std::shared_ptr<AudioBus> &bus, int framesT
     if (_useEnvelope) {
       _rampDuration = ENVELOPE_DECAY; // Use envelope decay time
     } else {
-      _rampDuration = 1.0f; // Fixed 1 second
+      _rampDuration = 1.5f; // Fixed 1.5 seconds
     }
   }
   

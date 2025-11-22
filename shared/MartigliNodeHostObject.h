@@ -43,6 +43,7 @@ public:
     addGetters(JSI_EXPORT_PROPERTY_GETTER(MartigliNodeHostObject, shouldPause));
     addGetters(JSI_EXPORT_PROPERTY_GETTER(MartigliNodeHostObject, shouldResume));
     addGetters(JSI_EXPORT_PROPERTY_GETTER(MartigliNodeHostObject, shouldStop));
+    addGetters(JSI_EXPORT_PROPERTY_GETTER(MartigliNodeHostObject, shouldResetPhase));
     
     // Add setters
     addSetters(JSI_EXPORT_PROPERTY_SETTER(MartigliNodeHostObject, mf0));
@@ -62,6 +63,7 @@ public:
     addSetters(JSI_EXPORT_PROPERTY_SETTER(MartigliNodeHostObject, shouldPause));
     addSetters(JSI_EXPORT_PROPERTY_SETTER(MartigliNodeHostObject, shouldResume));
     addSetters(JSI_EXPORT_PROPERTY_SETTER(MartigliNodeHostObject, shouldStop));
+    addSetters(JSI_EXPORT_PROPERTY_SETTER(MartigliNodeHostObject, shouldResetPhase));
   }
 
   MARTIGLI_PROPERTY(Number, mf0)
@@ -81,6 +83,7 @@ public:
   MARTIGLI_PROPERTY(Bool, shouldPause)
   MARTIGLI_PROPERTY(Bool, shouldResume)
   MARTIGLI_PROPERTY(Bool, shouldStop)
+  MARTIGLI_PROPERTY(Bool, shouldResetPhase)
   
   JSI_PROPERTY_GETTER(animationValue) {
     return {std::static_pointer_cast<MartigliNode>(node_)->animationValue};
