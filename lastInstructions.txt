@@ -11,4 +11,7 @@ Please write some instructions on how to effectively use this audio engine.
 
 
 Write a developer manual on how to use all this effectively. It does not need to be too long, be simple and essential, but cover everything you think is needed.
+you dont need to add code examples, as i will manually include index.tsx file in the docs
+
+one think that is important you mention, is how to compile properly on android. i know that the audio library needs to compile first, or something like that.
 

@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import Slider from "@react-native-community/slider";
 import { Container, Button } from "../components";
-import NativeOscillatorModule from "../../specs/NativeOscillatorModule";
+import NativeCustomNodesModule from "../../specs/NativeCustomNodesModule";
 import {
   MartigliNode,
   BinauralNode,

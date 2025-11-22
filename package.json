@@ -19,7 +19,7 @@
     },
     "ios": {
       "modulesProvider": {
-        "NativeOscillatorModule": "NativeOscillatorModuleProvider"
+        "NativeCustomNodesModule": "NativeCustomNodesModuleProvider"
       }
     }
   },

@@ -149,7 +149,7 @@ export class SessionManager {
       inhaleDur: node.inhaleDur ?? 4,
       exhaleDur: node.exhaleDur ?? 6,
       currentPeriod: node.currentPeriod ?? 10,
-      targetPeriod: node.mp1 ?? 10,  // Target is always mp1
+      targetPeriod: node.mp1 ?? 10, // Target is always mp1
     };
   }
 
@@ -160,13 +160,13 @@ export class SessionManager {
     const node = voice.node;
     if (node.mp0 === undefined) return; // Not a Martigli-type node
 
-    const factor = direction === 'increase' ? 0.85 : 1.15; // 15% change
+    const factor = direction === "increase" ? 0.85 : 1.15; // 15% change
 
     // mp0 and mp1 are the breathing cycle period in SECONDS
     // To make breathing faster, we decrease the period (multiply by < 1)
     // To make breathing slower, we increase the period (multiply by > 1)
-    node.mp0 = Math.max(1, node.mp0 * factor);  // Min 1 second
-    node.mp1 = Math.max(1, node.mp1 * factor);  // Min 1 second
+    node.mp0 = Math.max(1, node.mp0 * factor); // Min 1 second
+    node.mp1 = Math.max(1, node.mp1 * factor); // Min 1 second
   }
 
   destroy() {

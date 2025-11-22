@@ -34,7 +34,7 @@ void NoiseNode::resume() {
 float NoiseNode::generateWhiteNoise() {
   // Generate random value between -1 and 1, scaled down to match perceived loudness
   // White noise is perceptually louder due to high-frequency energy
-  return ((static_cast<float>(rand()) / RAND_MAX) * 2.0f - 1.0f) * 0.25f;
+  return ((static_cast<float>(rand()) / static_cast<float>(RAND_MAX)) * 2.0f - 1.0f) * 0.25f;
 }
 
 float NoiseNode::generatePinkNoise() {
@@ -61,7 +61,7 @@ float NoiseNode::generatePinkNoise() {
 float NoiseNode::generateBrownNoise() {
   // Brown noise (Brownian/red noise) via random walk
   // Use full-amplitude white noise for the random walk (not the scaled version)
-  float white = (static_cast<float>(rand()) / RAND_MAX) * 2.0f - 1.0f;
+  float white = (static_cast<float>(rand()) / static_cast<float>(RAND_MAX)) * 2.0f - 1.0f;
   brownState_ += white * 0.02f;
   
   // Prevent drift too far from zero

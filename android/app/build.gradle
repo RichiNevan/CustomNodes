@@ -2,6 +2,9 @@ apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
 
+// Ensure react-native-audio-api is built before our app
+evaluationDependsOn(":react-native-audio-api")
+
 def projectRoot = rootDir.getAbsoluteFile().getParentFile().getAbsolutePath()
 
 /**
@@ -181,9 +184,16 @@ dependencies {
     }
 }
 
-evaluationDependsOn(":react-native-audio-api")
-
 afterEvaluate {
-    tasks.getByName("buildCMakeDebug").dependsOn(findProject(":react-native-audio-api").tasks.getByName("mergeDebugNativeLibs"))
-    tasks.getByName("buildCMakeRelWithDebInfo").dependsOn(findProject(":react-native-audio-api").tasks.getByName("mergeReleaseNativeLibs"))
+    // Ensure CMake build tasks depend on audio-api native library being built
+    def audioApiProject = findProject(":react-native-audio-api")
+    if (audioApiProject != null) {
+        // Add dependencies for all CMake build variants
+        tasks.matching { it.name.startsWith("buildCMakeDebug") }.configureEach {
+            dependsOn(audioApiProject.tasks.named("mergeDebugNativeLibs"))
+        }
+        tasks.matching { it.name.startsWith("buildCMakeRelWithDebInfo") }.configureEach {
+            dependsOn(audioApiProject.tasks.named("mergeReleaseNativeLibs"))
+        }
+    }
 }

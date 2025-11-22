@@ -11,7 +11,7 @@ import Slider from "@react-native-community/slider";
 import { Container, Button } from "../components";
 import { SessionManager } from "../audio/SessionManager";
 import { presets } from "../../testPresets";
-import NativeOscillatorModule from "../../specs/NativeOscillatorModule";
+import NativeCustomNodesModule from "../../specs/NativeCustomNodesModule";
 import { DEFAULT_MASTER_VOLUME } from "../audio/AudioConfig";
 import { NoiseNode } from "./types";
 import { AudioContext } from "react-native-audio-api";
@@ -41,10 +41,10 @@ const SessionTest = () => {
   // Volume control
   const [masterVolume, setMasterVolume] = useState(DEFAULT_MASTER_VOLUME);
   const [voices, setVoices] = useState<any[]>([]);
-  
+
   // Animation value from Martigli breathing
   const [animationValue, setAnimationValue] = useState(0);
-  
+
   // Breathing parameters (for first Martigli voice)
   const [breathingParams, setBreathingParams] = useState<any>(null);
 
@@ -56,8 +56,8 @@ const SessionTest = () => {
   // Initialize session manager
   useEffect(() => {
     // First inject the custom processor installer
-    if (NativeOscillatorModule) {
-      NativeOscillatorModule.injectCustomProcessorInstaller();
+    if (NativeCustomNodesModule) {
+      NativeCustomNodesModule.injectCustomProcessorInstaller();
     }
 
     // Then create the session manager
@@ -167,17 +167,19 @@ const SessionTest = () => {
 
   const handleVoiceVolumeSliding = (index: number, value: number) => {
     // Update visual state immediately without updating the audio
-    setVoices(prev => prev.map((v, i) => i === index ? {...v, volume: value} : v));
+    setVoices((prev) =>
+      prev.map((v, i) => (i === index ? { ...v, volume: value } : v))
+    );
   };
 
-  const handleBreathingAdjust = (direction: 'increase' | 'decrease') => {
+  const handleBreathingAdjust = (direction: "increase" | "decrease") => {
     if (!sessionManager.current) return;
-    
+
     // Find first Martigli-type voice
-    const martigliIndex = voices.findIndex(v => 
-      v.type === 'Martigli' || v.type === 'MartigliBinaural'
+    const martigliIndex = voices.findIndex(
+      (v) => v.type === "Martigli" || v.type === "MartigliBinaural"
     );
-    
+
     if (martigliIndex >= 0) {
       sessionManager.current.adjustBreathingPace(martigliIndex, direction);
       // Force update of breathing params
@@ -188,11 +190,11 @@ const SessionTest = () => {
 
   const updateBreathingParams = () => {
     if (!sessionManager.current) return;
-    
-    const martigliIndex = voices.findIndex(v => 
-      v.type === 'Martigli' || v.type === 'MartigliBinaural'
+
+    const martigliIndex = voices.findIndex(
+      (v) => v.type === "Martigli" || v.type === "MartigliBinaural"
     );
-    
+
     if (martigliIndex >= 0) {
       const params = sessionManager.current.getBreathingParams(martigliIndex);
       setBreathingParams(params);
@@ -201,7 +203,7 @@ const SessionTest = () => {
 
   // Update breathing params periodically when playing
   useEffect(() => {
-    if (state === 'playing') {
+    if (state === "playing") {
       const interval = setInterval(updateBreathingParams, 100);
       return () => clearInterval(interval);
     }
@@ -413,18 +415,18 @@ const SessionTest = () => {
                   <View style={styles.paceButtonRow}>
                     <Pressable
                       style={styles.paceButton}
-                      onPress={() => handleBreathingAdjust('decrease')}
+                      onPress={() => handleBreathingAdjust("decrease")}
                     >
                       <Text style={styles.paceButtonText}>- Slower</Text>
                     </Pressable>
                     <Pressable
                       style={styles.paceButton}
-                      onPress={() => handleBreathingAdjust('increase')}
+                      onPress={() => handleBreathingAdjust("increase")}
                     >
                       <Text style={styles.paceButtonText}>+ Faster</Text>
                     </Pressable>
                   </View>
-                  
+
                   <View style={styles.cycleInfoContainer}>
                     <View style={styles.cycleInfoRow}>
                       <Text style={styles.cycleLabel}>Current Cycle:</Text>

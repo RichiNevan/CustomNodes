@@ -16,7 +16,6 @@ private:
 
   // Envelope state for panOsc mode 1 (ping-pong crossfade)
   double panOscPhase_ = 0.0;  // Phase within the full 2*panOscPeriod cycle
-  bool isSwapped_ = false;    // Track if carriers are currently swapped
 
   // Audio state
   bool isRunning_ = false;
